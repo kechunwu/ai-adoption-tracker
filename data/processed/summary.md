@@ -1,7 +1,8 @@
 <!-- generated 2026-11-04 by claude-haiku-5-5 from what_moved.csv -->
 **Week ending 2026-11-01**
 
-- For the week ending 2026-11-01, all 12 tracked npm packages rose week-over-week, from +87.1% (LangChain `langchain`) to +130.3% (Elastic).
-- Year-over-year 4-week averages were highest for Anthropic `@anthropic-ai/sdk` (+1542.6%) and Cloudflare `wrangler` (+1226.0%), and lowest for Elastic (+62.3%).
-- Weekly download volume was largest for Anthropic `@anthropic-ai/sdk` (63.6M), OpenAI `openai` (55.4M), and Cloudflare `wrangler` (38.9M).
-- Weekly download counts are noisy due to CI bots and holiday weeks. Because this is a single week of broad, simultaneous jumps, these figures should be treated as provisional until subsequent weeks confirm the trend.
+- vLLM posted the largest weekly gain in the table (+32.5% wow, +45.7% vs prior 4-week average), and Hugging Face Transformers rose +13.5% wow.
+- LlamaIndex (llama-index) fell -5.0% wow and -31.6% vs its prior 4-week average, the steepest decline among the packages shown; llama-index-core was up +2.7% wow but -7.5% vs prior 4 weeks.
+- Mistral AI's mistralai fell -14.2% wow, while its 4-week trend was -7.2% vs prior average.
+- Most other packages (OpenAI, Anthropic, Google's google-genai, MongoDB, Datadog) show modest single-digit to low-teens gains on both measures.
+- The yoy_4wk column is blank for every row, so year-over-year comparisons are not available this week. Weekly download counts are noisy (CI bots, holidays), so single-week moves should be read cautiously.

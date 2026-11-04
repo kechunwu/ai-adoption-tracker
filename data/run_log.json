@@ -1,25 +1,13 @@
 {
-  "started": "2026-11-04T19:31:52Z",
+  "started": "2026-11-04T19:56:43Z",
   "steps": {
     "npm": {
       "ok": true,
-      "rows": 71280
+      "rows": 91080
     },
     "pypi": {
       "ok": true,
-      "rows": 4200
-    },
-    "hn": {
-      "ok": true,
-      "rows": 2096
-    },
-    "github": {
-      "ok": true,
-      "rows": 25
-    },
-    "sec": {
-      "ok": true,
-      "rows": 191
+      "rows": 5040
     },
     "build": {
       "ok": true,
@@ -34,5 +22,5 @@
       "rows": 1
     }
   },
-  "finished": "2026-11-04T19:46:31Z"
+  "finished": "2026-11-04T20:01:36Z"
 }

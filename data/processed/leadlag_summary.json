@@ -1,11 +1,14 @@
 {
+  "note": "counts cover pre-registered signals (hn, npm, pypi) only; post-hoc signals listed separately",
+  "posthoc_company_tests_run": 25,
+  "posthoc_company_tests_p_lt_05": 0,
   "primary_spec": "yoy",
   "company_tests_run": 55,
   "company_tests_p_lt_05": 0,
   "expected_false_positives_at_05": 2.8,
   "company_tests_q_lt_10": 0,
   "pooled_tests_run": 20,
-  "pooled_tests_p_lt_05": 5,
-  "pooled_min_p_lag_adj": 0.05450608097536028,
+  "pooled_tests_p_lt_05": 8,
+  "pooled_min_p_lag_adj": 0.0229095639611668,
   "untestable_cells": 70
 }
