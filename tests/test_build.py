@@ -9,5 +9,5 @@ def test_weekly_drops_partial_weeks_and_yoy():
                           "downloads": 10})
     w = weekly_downloads(daily)
     assert (w["downloads"] == 70).all()           # only complete weeks
-    assert w["week"].dt.dayofweek.eq(6).all()     # weeks end Sunday
+    assert w["week"].dt.day_of_week.eq(6).all()     # weeks end Sunday
     assert w["yoy"].dropna().abs().max() < 1e-12  # flat series -> 0% YoY
