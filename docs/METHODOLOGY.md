@@ -47,8 +47,8 @@ comments are dropped. HTML is unescaped and tags stripped.
 Normalising by total posts removes the swings in overall HN hiring volume. For quarterly analysis we pool
 mentions and posts across the months of the fiscal quarter.
 
-**Auditability.** Every match stores a ±60-character snippet (`data/raw/hn_matches.parquet`), viewable in the
-app. If the matching rules change, a rules hash changes and all months are re-processed.
+**Auditability.** Every match stores a ±60-character snippet (`data/raw/hn_matches.parquet`), viewable on the
+Tool trends page. If the matching rules change, a rules hash changes and all months are re-processed.
 
 ## 3. Downloads
 
