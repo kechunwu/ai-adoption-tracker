@@ -27,8 +27,8 @@ from tracker.config import DATA, PROCESSED, RAW, ROOT, entities, known_breaks
 
 OUT = ROOT / "_site"
 HERE = Path(__file__).resolve().parent
-PORTFOLIO = "https://kc31415.github.io"
-REPO = "https://github.com/KC31415/ai-adoption-tracker"
+PORTFOLIO = "https://kechunwu.github.io"
+REPO = "https://github.com/kechunwu/ai-adoption-tracker"
 BLOB = f"{REPO}/blob/main"
 
 # Validated categorical palette (fixed order; color follows the entity, never rank)

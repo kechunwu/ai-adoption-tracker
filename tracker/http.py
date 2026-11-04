@@ -11,7 +11,7 @@ from urllib3.util.retry import Retry
 
 log = logging.getLogger(__name__)
 
-DEFAULT_UA = "ai-adoption-tracker (github.com/KC31415/ai-adoption-tracker)"
+DEFAULT_UA = "ai-adoption-tracker (github.com/kechunwu/ai-adoption-tracker)"
 
 
 def make_session(user_agent: str | None = None, extra_headers: dict | None = None) -> requests.Session:

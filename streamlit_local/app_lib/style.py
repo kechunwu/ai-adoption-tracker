@@ -12,8 +12,8 @@ VENDOR_COLOR = {"openai": PALETTE[0], "anthropic": PALETTE[1], "google-genai": P
 POS, NEG, NEUTRAL = "#2a78d6", "#e34948", "#8a8984"
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#e6e5e0"
 
-PORTFOLIO = "https://kc31415.github.io"
-REPO = "https://github.com/KC31415/ai-adoption-tracker"
+PORTFOLIO = "https://kechunwu.github.io"
+REPO = "https://github.com/kechunwu/ai-adoption-tracker"
 
 
 def base_layout(fig: go.Figure, title: str | None = None, yfmt: str | None = None, height=360) -> go.Figure:

@@ -8,8 +8,8 @@ st.set_page_config(page_title="Methodology Â· AI Adoption Tracker", page_icon="ð
 ROOT = Path(__file__).resolve().parent.parent.parent
 md = (ROOT / "docs" / "METHODOLOGY.md").read_text()
 # links to repo files don't resolve inside the app; point them at GitHub
-md = md.replace("](../", "](https://github.com/KC31415/ai-adoption-tracker/blob/main/").replace(
-    "](null_calibration.md)", "](https://github.com/KC31415/ai-adoption-tracker/blob/main/docs/null_calibration.md)")
+md = md.replace("](../", "](https://github.com/kechunwu/ai-adoption-tracker/blob/main/").replace(
+    "](null_calibration.md)", "](https://github.com/kechunwu/ai-adoption-tracker/blob/main/docs/null_calibration.md)")
 st.markdown(md)
 cal = ROOT / "docs" / "null_calibration.md"
 if cal.exists():
