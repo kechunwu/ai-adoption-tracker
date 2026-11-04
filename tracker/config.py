@@ -90,3 +90,7 @@ def analysis_settings() -> dict:
 
 def hn_context_settings() -> dict:
     return load_raw()["hn_ai_context"]
+
+
+def hn_noise_settings() -> dict:
+    return load_raw().get("hn_noise_context", {"lookback": 0, "phrases": []})

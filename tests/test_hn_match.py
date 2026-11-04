@@ -66,3 +66,18 @@ def test_employer_detection(M):
     assert M["SNOW"].is_employer("Snowflake | SWE | San Mateo\nWe build...")
     assert not M["SNOW"].is_employer("Acme | Data Eng | Remote\nWe use Snowflake")
     assert post_header("Datadog (NYC) | SRE\nbody") == "Datadog (NYC)"
+
+
+def test_customer_and_pedigree_context(M):
+    assert not hit(M, "anthropic", "Our product is trusted by teams at Stripe, Anthropic, and OpenAI.")
+    assert not hit(M, "mistralai", "Our customers include Mistral, Poolside and Meta.", "2025-01-01")
+    assert not hit(M, "SNOW", "Founded by ex-Snowflake engineers.")
+    assert not hit(M, "openai", "We are backed by YC and investors from OpenAI.")
+    # a new sentence resets the context
+    assert hit(M, "SNOW", "Trusted by 500 companies. Our stack: Snowflake, dbt.")
+    assert hit(M, "anthropic", "Agents run on Anthropic Claude with OpenAI embeddings.")
+    assert hit(M, "SNOW", "Stack: Postgres, Snowflake, Kafka")
+
+
+def test_customers_word_alone_is_not_noise(M):
+    assert hit(M, "SNOW", "We help customers migrate their warehouses to Snowflake")

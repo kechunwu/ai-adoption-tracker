@@ -18,7 +18,11 @@ How false positives are handled (also documented in docs/METHODOLOGY.md):
 4. Deliberately omitted aliases: bare "Elastic" (AWS Elastic Beanstalk/IP/LB),
    bare "GPT" (GUID Partition Table), "transformers" (ambiguous),
    "AI SDK" (generic).
-5. Employer vs. user: a post *by* the company (header "Snowflake | Senior
+5. Customer / investor / pedigree context: "trusted by Snowflake, Anthropic",
+   "customers include Mistral", "ex-Datadog engineers" describe the company as
+   a customer or former employer, not as a tool in use. A mention is skipped if
+   such a phrase occurs earlier in the same sentence (config `hn_noise_context`).
+6. Employer vs. user: a post *by* the company (header "Snowflake | Senior
    Engineer | ...") is hiring, not adoption. We flag a match as
    ``is_employer`` when the employer alias appears in the post header's first
    ``|``-separated field. The default adoption share excludes those posts.
@@ -31,7 +35,7 @@ import json
 import re
 from dataclasses import dataclass
 
-MATCHER_VERSION = 3  # bump when the code (not the config) changes behaviour
+MATCHER_VERSION = 4  # bump when the code (not the config) changes behaviour
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _P_RE = re.compile(r"<p>|<br\s*/?>", re.I)
@@ -71,6 +75,18 @@ class EntityMatcher:
     context_re: re.Pattern
     product_re: re.Pattern
     window: int
+    noise_re: re.Pattern | None = None
+    lookback: int = 0
+
+    def _noise_before(self, text: str, start: int) -> bool:
+        if not self.noise_re or not self.lookback:
+            return False
+        left = text[max(0, start - self.lookback):start]
+        # only the current sentence / line / list item
+        cut = max(left.rfind(". "), left.rfind("\n"), left.rfind("! "), left.rfind("? "), left.rfind(" * "))
+        if cut >= 0:
+            left = left[cut + 1:]
+        return bool(self.noise_re.search(left))
 
     def _excluded(self, text: str) -> list[tuple[int, int]]:
         if not self.exclude_re:
@@ -92,6 +108,8 @@ class EntityMatcher:
             s, e = m.span()
             if any(a <= s and e <= b for a, b in excluded):
                 continue
+            if self._noise_before(text, s):
+                continue
             if self.gated_re and self.gated_re.fullmatch(m.group(0)):
                 if self.not_before and post_date and post_date < self.not_before:
                     continue
@@ -107,7 +125,11 @@ class EntityMatcher:
         return bool(self.employer_re.search(post_header(text)))
 
 
-def build_matchers(entities, context_cfg: dict) -> list[EntityMatcher]:
+def build_matchers(entities, context_cfg: dict, noise_cfg: dict | None = None) -> list[EntityMatcher]:
+    if noise_cfg is None:
+        from tracker.config import hn_noise_settings
+        noise_cfg = hn_noise_settings()
+    noise_re = re.compile(rf"(?:^|\b|(?<=\W))(?:{_alt(noise_cfg['phrases'])})", re.I) if noise_cfg.get("phrases") else None
     ctx_re = re.compile(rf"\b(?:{_alt(context_cfg['words'])})\b", re.I)
     prod_re = re.compile(_alt(context_cfg["product_forms"]), re.I)
     out = []
@@ -128,14 +150,19 @@ def build_matchers(entities, context_cfg: dict) -> list[EntityMatcher]:
                 context_re=ctx_re,
                 product_re=prod_re,
                 window=int(context_cfg.get("context_window", 100)),
+                noise_re=noise_re,
+                lookback=int(noise_cfg.get("lookback", 0)),
             )
         )
     return out
 
 
 def rules_hash(entities, context_cfg: dict) -> str:
+    from tracker.config import hn_noise_settings
+
     payload = {
         "v": MATCHER_VERSION,
+        "noise": hn_noise_settings(),
         "hn": {e.id: e.hn for e in entities if e.hn},
         "ctx": context_cfg,
     }

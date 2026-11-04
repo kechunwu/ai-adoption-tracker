@@ -270,6 +270,19 @@ hn_ai_context:
   product_forms: ['claude\s+(?:code|api|sonnet|opus|haiku|\d)', 'gemini\s+(?:api|pro|flash|ultra|\d)',
                   'mistral\s+(?:ai|large|small|medium|7b)']
 
+# Mentions that describe the company as a CUSTOMER, INVESTOR or EX-EMPLOYER
+# ("trusted by ... Anthropic", "customers include Mistral", "ex-Snowflake")
+# are not adoption. A mention is skipped if one of these phrases appears
+# earlier in the same sentence (within `lookback` chars). Added after auditing
+# a random sample of matches (see METHODOLOGY section 2).
+hn_noise_context:
+  lookback: 160
+  phrases: ['trusted by', 'used by', 'customers? (?:include|including|like|such as)', 'clients? (?:include|including|like|such as)',
+            'serving (?:companies|customers|teams)', 'logos', 'teams at', 'companies like',
+            'backed by', 'investors', 'partners? (?:include|including|with)', 'alumni', 'ex-', 'former', 'formerly',
+            'previously (?:at|worked)', 'came from', 'founded by', 'founders? (?:from|of)', 'engineers from',
+            'compared to', 'competitors?', 'acquired by', 'sell(?:s|ing)? to']
+
 # Analysis settings, fixed BEFORE any data was pulled (see docs/METHODOLOGY.md).
 analysis:
   lags_quarters: [0, 1, 2, 3, 4]
