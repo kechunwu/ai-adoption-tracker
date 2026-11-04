@@ -2,8 +2,8 @@
 
 **Do developer-adoption signals lead revenue for data-infrastructure companies?**
 
-**Live site: https://kc31415.github.io/ai-adoption-tracker** · Part of [Kechun Wu's portfolio](https://kc31415.github.io),
-alongside [Morning Brief](https://github.com/KC31415/morning-brief) and [Earnings Desk](https://github.com/KC31415/earnings-desk).
+**Live site: https://kechunwu.github.io/ai-adoption-tracker** · Part of [Kechun Wu's portfolio](https://kechunwu.github.io),
+alongside [Morning Brief](https://github.com/kechunwu/morning-brief) and [Earnings Desk](https://github.com/kechunwu/earnings-desk).
 
 A static website, rebuilt every Monday by GitHub Actions. It tracks how fast developers and companies adopt AI
 and data-infrastructure tools, using free alternative data (npm and PyPI downloads, *Ask HN: Who is hiring?*
@@ -15,7 +15,7 @@ Cloudflare (NET)**.
 ## Headline findings
 
 *As of data through the week ending 2026-11-01 (SEC filings through 2026-09). The
-[live research note](https://kc31415.github.io/ai-adoption-tracker/lead-lag.html) regenerates every number weekly.*
+[live research note](https://kechunwu.github.io/ai-adoption-tracker/lead-lag.html) regenerates every number weekly.*
 
 - **HN hiring-post share → revenue: null.** Across 6 companies and lags of 0–4 quarters, pooled correlations sit
   between −0.01 and +0.11. Every 95% CI includes zero, and nothing survives the lag adjustment.
@@ -49,11 +49,11 @@ with the caveats of small samples and noisy proxies (see Limitations).
 
 | Page | What it shows |
 |---|---|
-| [**Overview**](https://kc31415.github.io/ai-adoption-tracker/) | What moved this week: each package vs the prior week, prior 4 weeks, a year ago, and vs a registry baseline; the latest HN hiring share; optional short Claude Haiku summary |
-| [**Tool trends**](https://kc31415.github.io/ai-adoption-tracker/trends.html) | Per tool/company: weekly downloads, YoY growth (raw and vs baseline), HN hiring-post share with an audit table of matched post snippets, GitHub stats |
-| [**AI SDK market share**](https://kc31415.github.io/ai-adoption-tracker/ai-sdk.html) | OpenAI vs Anthropic vs Google Gen AI vs Mistral SDK downloads (npm and PyPI) and HN mention share |
-| [**Lead/lag study**](https://kc31415.github.io/ai-adoption-tracker/lead-lag.html) | Research note: question, data, method, findings (including nulls), limitations, every test run |
-| [**Methodology**](https://kc31415.github.io/ai-adoption-tracker/methodology.html) | Sources, HN false-positive rules, data-quality fixes, SEC Q4 derivation, statistics and calibration |
+| [**Overview**](https://kechunwu.github.io/ai-adoption-tracker/) | What moved this week: each package vs the prior week, prior 4 weeks, a year ago, and vs a registry baseline; the latest HN hiring share; optional short Claude Haiku summary |
+| [**Tool trends**](https://kechunwu.github.io/ai-adoption-tracker/trends.html) | Per tool/company: weekly downloads, YoY growth (raw and vs baseline), HN hiring-post share with an audit table of matched post snippets, GitHub stats |
+| [**AI SDK market share**](https://kechunwu.github.io/ai-adoption-tracker/ai-sdk.html) | OpenAI vs Anthropic vs Google Gen AI vs Mistral SDK downloads (npm and PyPI) and HN mention share |
+| [**Lead/lag study**](https://kechunwu.github.io/ai-adoption-tracker/lead-lag.html) | Research note: question, data, method, findings (including nulls), limitations, every test run |
+| [**Methodology**](https://kechunwu.github.io/ai-adoption-tracker/methodology.html) | Sources, HN false-positive rules, data-quality fixes, SEC Q4 derivation, statistics and calibration |
 
 Every page shows **“Data as of …”** (latest complete download week, HN month, SEC filing date, pipeline run time).
 
@@ -112,7 +112,7 @@ flowchart LR
   L --> D
   S --> D
   D --> W
-  W -->|actions/deploy-pages| P[GitHub Pages<br/>kc31415.github.io/ai-adoption-tracker]
+  W -->|actions/deploy-pages| P[GitHub Pages<br/>kechunwu.github.io/ai-adoption-tracker]
   CFG[config/tracked.yaml] -.-> F
   CFG -.-> L
 ```
@@ -172,13 +172,13 @@ The site is plain static files (HTML, CSS, JS and JSON) built by `site_builder/`
 
 **One-time setup (repo owner):**
 
-1. Open **github.com/KC31415/ai-adoption-tracker → Settings** (top tab bar).
+1. Open **github.com/kechunwu/ai-adoption-tracker → Settings** (top tab bar).
 2. In the left sidebar, under *Code and automation*, click **Pages**.
 3. Under **Build and deployment → Source**, choose **GitHub Actions** from the dropdown. It saves automatically;
    there is no branch to pick.
 4. Go to the **Actions** tab → **Build & deploy site** (left list) → **Run workflow** → pick the branch → **Run workflow**.
 5. When both jobs (build, deploy) turn green (about 1 minute), the site is live at
-   **https://kc31415.github.io/ai-adoption-tracker**. The URL also appears on the run summary and under Settings → Pages.
+   **https://kechunwu.github.io/ai-adoption-tracker**. The URL also appears on the run summary and under Settings → Pages.
 6. Optional: on the repo home page click the ⚙︎ next to **About** → Website → paste the URL → Save.
 
 **From then on:** every Monday the **Weekly data pull** workflow fetches data, runs the analysis, commits `data/`,
