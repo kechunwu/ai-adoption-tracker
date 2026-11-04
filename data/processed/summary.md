@@ -1,8 +1,10 @@
 <!-- generated 2026-11-04 by claude-haiku-5-5 from what_moved.csv -->
 **Week ending 2026-11-01**
 
-- Week ending 2026-11-01: vLLM (+32.5% wow, +45.7% vs prior 4-week average) and Hugging Face Transformers (+13.5% wow, +16.7% vs prior 4-week average) posted the largest gains in the table.
-- LlamaIndex's llama-index package fell 5.0% wow and 31.6% vs prior 4-week average, while llama-index-core rose 2.7% wow but fell 7.5% vs prior 4-week average.
-- Mistral AI's mistralai fell 14.2% wow and 7.2% vs prior 4-week average, the largest weekly decline shown.
-- Most other tracked packages (OpenAI, Anthropic, pymongo, Datadog) rose modestly on both measures.
-- Year-over-year 4-week comparisons are blank for all rows, so no annual trend is shown this week. Weekly download counts are noisy (CI bots, holidays), so single-week moves should be read cautiously.
+Week ending 2026-11-01, PyPI downloads (wow and vs_prior4 columns; yoy_4wk is blank for all rows, so no year-over-year read is possible):
+
+- vLLM led gains, up 32.5% week over week and 45.7% against its prior 4-week average.
+- Hugging Face Transformers (+13.5% wow, +16.7% vs prior 4 weeks) and google-generativeai (+15.0% wow, +15.3%) also rose notably. Anthropic and OpenAI showed smaller gains of about 6-10%.
+- LlamaIndex (llama-index) fell 5.0% wow and 31.6% vs prior 4 weeks, while llama-index-core rose 2.7% wow but is down 7.5% vs prior 4 weeks.
+- Mistral AI dropped 14.2% wow, though it is only 7.2% below its prior 4-week average.
+- Weekly counts are noisy (CI bots, holidays), so single-week moves, especially smaller ones, may not reflect sustained adoption.
