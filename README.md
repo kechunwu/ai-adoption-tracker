@@ -111,7 +111,30 @@ streamlit run streamlit_app.py
 ## Deploy (Streamlit Community Cloud)
 
 <!-- DEPLOY:START -->
-See the deploy section below (added in Milestone 4).
+The app only **reads** the CSV/Parquet files the GitHub Action commits to `data/`, so it needs no secrets to run.
+
+1. Make sure the data branch is the one you deploy. The weekly cron only runs on the repo's **default branch**.
+   If `main` is not the default yet: GitHub → repo → **Pull requests → New pull request**, base `main`,
+   compare `claude/affectionate-ptolemy-bpscck` → **Create** → **Merge**. Then **Settings → General →
+   Default branch** → `main`.
+2. Go to **https://share.streamlit.io** → **Continue with GitHub** (authorize Streamlit if asked).
+3. Click **Create app** → **Deploy a public app from GitHub**.
+4. Fill in: **Repository** `KC31415/ai-adoption-tracker` · **Branch** `main` · **Main file path**
+   `streamlit_app.py` · **App URL** e.g. `ai-adoption-tracker` (→ `ai-adoption-tracker.streamlit.app`).
+5. Click **Advanced settings** → **Python version** `3.11` → **Secrets** box, paste:
+   ```toml
+   # Optional: enables the "Write a short summary" button when no weekly summary is committed yet
+   ANTHROPIC_API_KEY = "sk-ant-..."
+   # Optional: only needed if you ever run the SEC fetcher from the cloud app environment
+   SEC_USER_AGENT = "Kechun Wu your-email@example.com"
+   ```
+   → **Save** → **Deploy**. The first build takes 2–4 minutes.
+6. Each weekly Action run commits new data, and Streamlit Cloud redeploys automatically on push.
+7. Add the app URL to the repo's **About** box (gear icon on the repo home page) and to your portfolio site.
+
+**GitHub repository secrets** (Settings → Secrets and variables → Actions → New repository secret) used by the
+weekly workflow: `SEC_USER_AGENT` (required, "Name email"), `ANTHROPIC_API_KEY` (optional; without it the
+Haiku summary step is skipped). `GITHUB_TOKEN` is provided automatically.
 <!-- DEPLOY:END -->
 
 ## Limitations

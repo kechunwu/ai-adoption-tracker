@@ -39,6 +39,22 @@ if ll:
 
 st.subheader("What moved this week")
 summary = data.summary_md()
+if not summary and not moved.empty:
+    # Optional: generate on demand if ANTHROPIC_API_KEY is set in Streamlit secrets.
+    key = None
+    try:
+        key = st.secrets.get("ANTHROPIC_API_KEY")
+    except Exception:
+        key = None
+    if key and st.button("Write a short summary with Claude Haiku"):
+        import os
+
+        from tracker.summary import generate
+        os.environ["ANTHROPIC_API_KEY"] = key
+        with st.spinner("Summarizing..."):
+            summary = generate(moved)
+        if not summary:
+            st.warning("Summary unavailable right now.")
 if summary:
     with st.container(border=True):
         st.markdown(summary.split("-->", 1)[-1])
