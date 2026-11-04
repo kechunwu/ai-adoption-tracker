@@ -202,6 +202,10 @@ Haiku summary on the Overview page is skipped and everything else still works). 
 - **GitHub stars** only accumulate from the first snapshot.
 - Correlation is not causation. **This is a research project, not investment advice.**
 
+## How this was built
+
+The code was written with Claude Code, Anthropic's AI coding assistant; the `Co-Authored-By` lines in the commit history show which commits. The weekly "What moved" paragraph is written by Claude Haiku and labelled as such on the page. The methodology, the data-quality problems found along the way and the post-hoc changes are documented in [docs/METHODOLOGY.md](docs/METHODOLOGY.md).
+
 ## License
 
 MIT
