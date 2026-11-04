@@ -15,7 +15,9 @@ import pandas as pd
 
 from tracker.config import PROCESSED
 
-SIG = {"hn": "HN hiring-post share", "npm": "npm downloads", "pypi": "PyPI downloads"}
+SIG = {"hn": "HN hiring-post share", "npm": "npm downloads", "pypi": "PyPI downloads",
+       "npm_rel": "npm downloads vs registry baseline (post-hoc)",
+       "pypi_rel": "PyPI downloads vs registry baseline (post-hoc)"}
 
 
 def classify(pooled: pd.DataFrame, sig: str, spec: str = "yoy") -> tuple[str, str]:

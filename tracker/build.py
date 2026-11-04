@@ -21,56 +21,160 @@ log = logging.getLogger(__name__)
 
 
 # --------------------------------------------------------------- downloads --
-def load_daily() -> pd.DataFrame:
+REF_MIN_DAILY = 1000   # "established" package: median >= 1,000/day over the prior 28 days
+MAX_IMPUTED_DAYS = 2   # a week with more filled-in days than this is left blank
+
+
+def mark_missing(df: pd.DataFrame) -> pd.DataFrame:
+    """Turn reporting artefacts into missing values (NaN) instead of real zeros.
+
+    1. Pre-launch zeros: npm reports 0 for every day before a package existed.
+       These are dropped (`prelaunch`), not imputed.
+    2. Registry outages (`outage`): days on which >= 50% of established packages
+       report exactly 0 (e.g. npm returned 0 for everything on 2026-10-13..15).
+    3. A 0 for an established package on any other day is also treated as missing
+       (a package with millions of daily installs does not drop to zero).
+    """
+    if df.empty:
+        return df.assign(missing=pd.Series(dtype=bool), prelaunch=pd.Series(dtype=bool),
+                         outage=pd.Series(dtype=bool))
+    df = df.sort_values(["package", "date"]).copy()
+    df["downloads"] = df["downloads"].astype(float)
+    started = df.groupby("package")["downloads"].transform(lambda s: (s > 0).cummax()).astype(bool)
+    ref = df.groupby("package")["downloads"].transform(lambda s: s.shift(1).rolling(28, min_periods=14).median())
+    established = ref >= REF_MIN_DAILY
+    zero = df["downloads"] == 0
+    n_est = established.groupby(df["date"]).transform("sum")
+    n_zero = (zero & established).groupby(df["date"]).transform("sum")
+    df["outage"] = (n_est > 0) & (n_zero >= 0.5 * n_est)
+    df["prelaunch"] = ~started
+    df["missing"] = started & zero & (df["outage"] | established)
+    df.loc[df["missing"] | df["prelaunch"], "downloads"] = np.nan
+    return df
+
+
+def outage_days(df: pd.DataFrame) -> list[str]:
+    """Dates treated as registry-wide outages (listed on the methodology page)."""
+    if df.empty or "outage" not in df:
+        return []
+    return sorted(pd.to_datetime(df.loc[df["outage"], "date"]).dt.strftime("%Y-%m-%d").unique())
+
+
+def impute_same_weekday(s: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """Fill missing days with the mean of the same weekday 1 week before/after
+    (falling back to 2 weeks). Keeps weekday seasonality, unlike a plain mean."""
+    s = s.asfreq("D")
+    filled = s.copy()
+    for k in (7, 14):
+        cand = pd.concat([s.shift(k), s.shift(-k)], axis=1).mean(axis=1)
+        filled = filled.fillna(cand)
+    return filled, s.isna() & filled.notna()
+
+
+def load_daily(drop_missing: bool = True) -> pd.DataFrame:
+    """Daily downloads for both registries with artefacts handled.
+
+    Pre-launch rows are dropped; missing (outage) days are imputed from the same
+    weekday and flagged `imputed` so weekly sums stay comparable."""
     frames = []
     for reg in ("npm", "pypi"):
         df = read_csv(RAW / f"{reg}_daily.csv")
-        if not df.empty:
-            df["registry"] = reg
-            frames.append(df)
+        if df.empty:
+            continue
+        df["date"] = pd.to_datetime(df["date"])
+        df = mark_missing(df)
+        df = df[~df["prelaunch"]]
+        parts = []
+        for pkg, g in df.groupby("package"):
+            vals, imp = impute_same_weekday(g.set_index("date")["downloads"])
+            parts.append(pd.DataFrame({"date": vals.index, "package": pkg, "downloads": vals.values,
+                                       "imputed": imp.values}))
+        df = pd.concat(parts, ignore_index=True)
+        if drop_missing:
+            df = df.dropna(subset=["downloads"])
+        df["registry"] = reg
+        frames.append(df)
     if not frames:
-        return pd.DataFrame(columns=["date", "package", "downloads", "registry", "entity"])
+        return pd.DataFrame(columns=["date", "package", "downloads", "registry", "entity", "imputed"])
     df = pd.concat(frames, ignore_index=True)
-    df["date"] = pd.to_datetime(df["date"])
     pm = package_map()
     df["entity"] = [pm.get((r, p)) for r, p in zip(df["registry"], df["package"])]
     return df.dropna(subset=["entity"])
 
 
 def weekly_downloads(daily: pd.DataFrame) -> pd.DataFrame:
-    """Sum to weeks ending Sunday; drop partial weeks; add 4-wk avg and YoY."""
+    """Weeks ending Sunday; complete weeks only, at most MAX_IMPUTED_DAYS filled
+    in from the same weekday; 4-week average and YoY of the 4-week average."""
     if daily.empty:
         return pd.DataFrame()
-    d = daily.copy()
+    d = daily.dropna(subset=["downloads"]).copy()
+    if "imputed" not in d:
+        d["imputed"] = False
     d["week"] = d["date"].dt.to_period("W-SUN").dt.end_time.dt.normalize()
     g = d.groupby(["registry", "package", "entity", "week"], as_index=False).agg(
-        downloads=("downloads", "sum"), days=("date", "nunique"))
-    g = g[g["days"] == 7].drop(columns="days")
-    g = g.sort_values(["registry", "package", "week"])
+        downloads=("downloads", "sum"), days=("date", "nunique"), imputed_days=("imputed", "sum"))
+    g = g[(g["days"] == 7) & (g["imputed_days"] <= MAX_IMPUTED_DAYS)].drop(columns="days")
+    # 4-week average from the gap-filled DAILY series (rolling 28 days), so one bad
+    # week doesn't blank the average; blank if > 7 of the 28 days were filled in.
+    roll = []
+    for (reg, pkg), s in d.groupby(["registry", "package"]):
+        s = s.set_index("date").sort_index()
+        r = pd.DataFrame({"sum28": s["downloads"].rolling("28D", min_periods=28).sum(),
+                          "imp28": s["imputed"].astype(float).rolling("28D", min_periods=28).sum()})
+        r = r[r.index.dayofweek == 6]
+        r["ma4"] = np.where(r["imp28"] <= 7, r["sum28"] / 4, np.nan)
+        roll.append(r[["ma4"]].assign(registry=reg, package=pkg).rename_axis("week").reset_index())
+    roll = pd.concat(roll, ignore_index=True)
     out = []
-    for _, s in g.groupby(["registry", "package"], sort=False):
+    for (reg, pkg), s in g.groupby(["registry", "package"], sort=False):
         s = s.set_index("week").asfreq("W-SUN")
         s[["registry", "package", "entity"]] = s[["registry", "package", "entity"]].ffill().bfill()
-        s["ma4"] = s["downloads"].rolling(4, min_periods=4).mean()
-        lag = s["ma4"].shift(52)
-        s["yoy"] = np.where(lag > 0, s["ma4"] / lag - 1, np.nan)
         out.append(s.reset_index())
-    return pd.concat(out, ignore_index=True)
+    w = pd.concat(out, ignore_index=True)
+    w = w.merge(roll, on=["registry", "package", "week"], how="left")
+    w = w.sort_values(["registry", "package", "week"])
+    lag = w.groupby(["registry", "package"])["ma4"].shift(52)
+    w["yoy"] = np.where(lag > 0, w["ma4"] / lag - 1, np.nan)
+    return w.reset_index(drop=True)
 
 
 def entity_weekly(weekly: pd.DataFrame) -> pd.DataFrame:
     if weekly.empty:
         return pd.DataFrame()
-    g = weekly.groupby(["entity", "registry", "week"], as_index=False)["downloads"].sum(min_count=1)
-    out = []
-    for _, s in g.groupby(["entity", "registry"], sort=False):
-        s = s.sort_values("week").set_index("week").asfreq("W-SUN")
-        s[["entity", "registry"]] = s[["entity", "registry"]].ffill().bfill()
-        s["ma4"] = s["downloads"].rolling(4, min_periods=4).mean()
-        lag = s["ma4"].shift(52)
-        s["yoy"] = np.where(lag > 0, s["ma4"] / lag - 1, np.nan)
-        out.append(s.reset_index())
-    return pd.concat(out, ignore_index=True)
+    w = weekly.copy()
+    span = w.dropna(subset=["ma4"]).groupby(["entity", "registry", "package"])["week"].agg(["min", "max"]).reset_index()
+    g = w.groupby(["entity", "registry", "week"], as_index=False).agg(
+        downloads=("downloads", lambda x: x.sum(min_count=1)), ma4=("ma4", lambda x: x.sum(min_count=1)),
+        n_dl=("downloads", "count"), n_ma=("ma4", "count"))
+    # expected = packages of this entity that existed that week; a missing one -> blank, not a fake dip
+    exp = []
+    for r in g.itertuples():
+        sp = span[(span["entity"] == r.entity) & (span["registry"] == r.registry)]
+        exp.append(int(((sp["min"] <= r.week) & (sp["max"] >= r.week)).sum()))
+    g["expected"] = exp
+    g.loc[g["n_dl"] < g["expected"], "downloads"] = np.nan
+    g.loc[g["n_ma"] < g["expected"], "ma4"] = np.nan
+    g = g.drop(columns=["expected", "n_dl", "n_ma"]).sort_values(["entity", "registry", "week"])
+    lag = g.groupby(["entity", "registry"])["ma4"].shift(52)
+    g["yoy"] = np.where(lag > 0, g["ma4"] / lag - 1, np.nan)
+    return add_baseline(g.reset_index(drop=True))
+
+
+BASELINE = "_baseline"
+
+
+def add_baseline(df: pd.DataFrame, keys=("registry", "week")) -> pd.DataFrame:
+    """Add YoY relative to the registry control basket: (1+yoy)/(1+yoy_baseline) - 1."""
+    base = df[df["entity"] == BASELINE][[*keys, "ma4", "yoy"]].rename(
+        columns={"ma4": "baseline_ma4", "yoy": "baseline_yoy"})
+    if base.empty:
+        df["baseline_yoy"] = np.nan
+        df["yoy_rel"] = np.nan
+        return df
+    df = df.drop(columns=[c for c in ("baseline_ma4", "baseline_yoy", "yoy_rel") if c in df]).merge(
+        base, on=list(keys), how="left")
+    df["yoy_rel"] = (1 + df["yoy"]) / (1 + df["baseline_yoy"]) - 1
+    return df
 
 
 # ---------------------------------------------------------------------- HN --
@@ -91,19 +195,27 @@ def what_moved(weekly: pd.DataFrame, hn: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
     names = {e.id: e.name for e in entities()}
     rows = []
+    base = weekly[weekly["entity"] == BASELINE].groupby(["registry", "week"])["ma4"].sum(min_count=1)
+    base_yoy = (base / base.groupby(level=0).shift(52) - 1).rename("baseline_yoy")
+    weekly = weekly[weekly["entity"] != BASELINE]
+    last_week = weekly.dropna(subset=["downloads"])["week"].max()
     for (reg, pkg), s in weekly.groupby(["registry", "package"]):
-        s = s.dropna(subset=["downloads"]).sort_values("week")
-        if len(s) < 2:
+        s = s.set_index("week").sort_index()
+        if last_week not in s.index or pd.isna(s.at[last_week, "downloads"]):
             continue
-        last, prev = s.iloc[-1], s.iloc[-2]
-        prior4 = s["downloads"].iloc[-5:-1].mean() if len(s) >= 5 else np.nan
+        last = s.loc[last_week]
+        prev_w = last_week - pd.Timedelta(weeks=1)
+        prev = s["downloads"].get(prev_w, np.nan)
+        prior4 = s["downloads"].reindex(pd.date_range(end=prev_w, periods=4, freq="W-SUN"))
+        prior4 = prior4.mean() if prior4.notna().sum() >= 3 else np.nan
         rows.append({
             "entity": last["entity"], "name": names.get(last["entity"], last["entity"]),
-            "registry": reg, "package": pkg, "week": last["week"].date().isoformat(),
+            "registry": reg, "package": pkg, "week": last_week.date().isoformat(),
             "downloads": int(last["downloads"]),
-            "wow": last["downloads"] / prev["downloads"] - 1 if prev["downloads"] else np.nan,
-            "vs_prior4": last["downloads"] / prior4 - 1 if prior4 else np.nan,
+            "wow": last["downloads"] / prev - 1 if prev and pd.notna(prev) else np.nan,
+            "vs_prior4": last["downloads"] / prior4 - 1 if prior4 and pd.notna(prior4) else np.nan,
             "yoy_4wk": last.get("yoy", np.nan),
+            "yoy_vs_baseline": (1 + last.get("yoy", np.nan)) / (1 + base_yoy.get((reg, last_week), np.nan)) - 1,
         })
     out = pd.DataFrame(rows)
     if not hn.empty:
@@ -157,7 +269,17 @@ def quarterly_panel() -> pd.DataFrame:
             rows.append(row)
     p = pd.DataFrame(rows)
     # log YoY vs the same fiscal quarter a year earlier
-    for col, out in [("revenue", "rev_yoy"), ("hn_share", "hn_yoy"), ("npm_daily", "npm_yoy"), ("pypi_daily", "pypi_yoy")]:
+    # registry baseline over the same fiscal window (for the post-hoc "relative" signals)
+    if not daily.empty and (daily["entity"] == BASELINE).any():
+        bd = daily[daily["entity"] == BASELINE]
+        for reg in ("npm", "pypi"):
+            sub = bd[bd["registry"] == reg]
+            p[f"{reg}_base_daily"] = [
+                _window_mean_daily(sub, pd.Timestamp(a), pd.Timestamp(b)) if not sub.empty else np.nan
+                for a, b in zip(p["period_start"], p["period_end"])]
+    pairs = [("revenue", "rev_yoy"), ("hn_share", "hn_yoy"), ("npm_daily", "npm_yoy"), ("pypi_daily", "pypi_yoy"),
+             ("npm_base_daily", "npm_base_yoy"), ("pypi_base_daily", "pypi_base_yoy")]
+    for col, out in pairs:
         if col not in p:
             p[col] = np.nan
         key = p.set_index(["ticker", "fiscal_year", "fiscal_quarter"])[col]
@@ -166,6 +288,8 @@ def quarterly_panel() -> pd.DataFrame:
         with np.errstate(divide="ignore", invalid="ignore"):
             ratio = p[col] / prev
         p[out] = np.where((ratio > 0) & np.isfinite(ratio), np.log(ratio.where(ratio > 0)), np.nan)
+    p["npm_rel_yoy"] = p["npm_yoy"] - p["npm_base_yoy"]
+    p["pypi_rel_yoy"] = p["pypi_yoy"] - p["pypi_base_yoy"]
     return p.sort_values(["ticker", "period_end"]).reset_index(drop=True)
 
 

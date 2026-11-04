@@ -42,7 +42,10 @@ from tracker.config import PROCESSED, analysis_settings
 
 log = logging.getLogger(__name__)
 
-SIGNALS = {"hn": "HN hiring-post share", "npm": "npm downloads", "pypi": "PyPI downloads"}
+SIGNALS = {"hn": "HN hiring-post share", "npm": "npm downloads", "pypi": "PyPI downloads",
+           # post-hoc (added after seeing registry-wide download inflation in the raw data):
+           "npm_rel": "npm downloads vs registry baseline", "pypi_rel": "PyPI downloads vs registry baseline"}
+POST_HOC = {"npm_rel", "pypi_rel"}
 
 
 # ------------------------------------------------------------- utilities --
@@ -293,19 +296,24 @@ def _family_adjust(df: pd.DataFrame, family: list[str]) -> pd.DataFrame:
     q_bh: Benjamini-Hochberg across every test of the same spec."""
     if df.empty:
         return df
+    df["post_hoc"] = df["signal"].isin(POST_HOC)
     n_tested = df.groupby(family)["p"].transform(lambda s: s.notna().sum())
     df["p_lag_adj"] = np.minimum(1.0, df["p"] * n_tested)
     df["q_bh"] = np.nan
-    for _, idx in df.groupby("spec").groups.items():
+    for _, idx in df.groupby(["spec", "post_hoc"]).groups.items():
         df.loc[idx, "q_bh"] = bh_qvalues(df.loc[idx, "p"])
     return df
 
 
 def summarize(company: pd.DataFrame, pooled: pd.DataFrame, cfg: dict) -> dict:
     prim = cfg["primary_spec"]
-    c = company[(company["spec"] == prim) & company["r"].notna()]
-    p = pooled[(pooled["spec"] == prim) & pooled["r"].notna()]
+    c = company[(company["spec"] == prim) & company["r"].notna() & ~company["post_hoc"]]
+    p = pooled[(pooled["spec"] == prim) & pooled["r"].notna() & ~pooled["post_hoc"]]
+    ch = company[(company["spec"] == prim) & company["r"].notna() & company["post_hoc"]]
     return {
+        "note": "counts cover pre-registered signals (hn, npm, pypi) only; post-hoc signals listed separately",
+        "posthoc_company_tests_run": int(len(ch)),
+        "posthoc_company_tests_p_lt_05": int((ch["p"] < 0.05).sum()),
         "primary_spec": prim,
         "company_tests_run": int(len(c)),
         "company_tests_p_lt_05": int((c["p"] < 0.05).sum()),
@@ -314,7 +322,7 @@ def summarize(company: pd.DataFrame, pooled: pd.DataFrame, cfg: dict) -> dict:
         "pooled_tests_run": int(len(p)),
         "pooled_tests_p_lt_05": int((p["p"] < 0.05).sum()),
         "pooled_min_p_lag_adj": float(p["p_lag_adj"].min()) if len(p) else None,
-        "untestable_cells": int(company["r"].isna().sum()),
+        "untestable_cells": int(company.loc[~company["post_hoc"], "r"].isna().sum()),
     }
 
 

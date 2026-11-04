@@ -243,6 +243,18 @@ entities:
       aliases: ['databricks']
       employer_aliases: ['databricks']
 
+  # ------------------------------------------------------- Control basket --
+  # Not tracked tools: mature, ubiquitous packages used as a registry-wide
+  # baseline. In 2026 every npm package's download growth accelerated at once
+  # (CI / bot / AI-agent installs), so raw download YoY overstates adoption.
+  # "Relative" growth = package log-YoY minus this basket's log-YoY.
+  # (Added after inspecting raw download levels; see METHODOLOGY section 5.)
+  - id: _baseline
+    name: Registry baseline (control basket)
+    kind: control
+    npm: [react, lodash, express, typescript, axios]
+    pypi: [requests, numpy, urllib3, setuptools]
+
 # Words that make an ambiguous alias (context_gated) count as an AI tool
 # mention when they appear within `context_window` characters of it.
 hn_ai_context:

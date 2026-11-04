@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 BASE = "https://api.npmjs.org/downloads/range/{start}:{end}/{pkg}"
 HISTORY_START = dt.date(2016, 1, 1)   # aligns with the HN series
 CHUNK_DAYS = 365
-OVERLAP_DAYS = 14
+OVERLAP_DAYS = 35   # npm sometimes back-fills outage days late; re-fetch 5 weeks
 OUT = RAW / "npm_daily.csv"
 
 
