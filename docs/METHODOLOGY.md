@@ -34,7 +34,12 @@ comments are dropped. HTML is unescaped and tags stripped.
    test fixture ("We model our warehouse … email Claude at …") showed they produced false positives.
 4. *Aliases deliberately not used*: bare "Elastic" (AWS Elastic Beanstalk/IP/Load Balancing), bare "GPT"
    (GUID Partition Table; we require a version like GPT-4), "transformers", "AI SDK".
-5. *Employer vs. user*: a post **by** the company ("Snowflake | Senior Engineer | …") is hiring, not adoption.
+5. *Customer, investor and pedigree lists*: "trusted by teams at Anthropic", "customers include Mistral",
+   "founded by ex-Snowflake engineers", "backed by … OpenAI" describe the company as a customer, investor or
+   former employer, not as a tool in use. A mention is skipped if such a phrase appears earlier in the *same
+   sentence*. This rule was added after auditing a random sample of real matches (the first data pull), and all
+   months were re-matched.
+6. *Employer vs. user*: a post **by** the company ("Snowflake | Senior Engineer | …") is hiring, not adoption.
    If the employer alias appears in the header's first `|`-separated field the match is flagged
    `is_employer`. The adoption share **excludes** those posts; they are counted separately.
 
@@ -47,10 +52,32 @@ app. If the matching rules change, a rules hash changes and all months are re-pr
 
 ## 3. Downloads
 
-Daily counts → weekly sums (weeks ending Sunday, complete weeks only) → 4-week moving average → YoY
-= 4-week average vs the same 4 weeks 52 weeks earlier. Known noise: CI pipelines and Docker builds re-download
-packages; mirrors (excluded on PyPI); holiday weeks; new major versions that change install patterns;
-package renames (we include legacy names, e.g. `@google/generative-ai` and `google-generativeai`).
+Daily counts → weekly totals (weeks ending Sunday) → 4-week average (rolling 28 days) → YoY = 4-week average
+vs the same 4 weeks 52 weeks earlier.
+
+Data problems found in the first pull, and how they are handled:
+
+- **npm outage days.** On 14 days (3 isolated days in 2020–23, then 11 in Sep–Oct 2026) npm's API reported
+  exactly 0 for *every* package, which is a registry-side gap, not real usage. A day is treated as an outage when at
+  least half of the "established" packages (median ≥ 1,000/day over the prior 28 days) report 0. A 0 for an
+  established package on any other day is also treated as missing. Missing days are filled from the same weekday
+  1 week before/after (falling back to 2 weeks), which preserves the strong weekday/weekend pattern. A week with
+  more than 2 filled days is left blank, and week-over-week is only computed against the true prior calendar week.
+  The list of outage days is printed at the bottom of this page. Each run re-fetches the last 5 weeks, so late
+  back-fills by npm replace the filled values.
+- **Pre-launch zeros.** npm returns 0 for dates before a package existed; those rows are dropped.
+- **Registry-wide inflation (npm, 2026).** Download growth accelerated for *every* npm package at once in
+  2026 (MongoDB's driver went from about +34% to +129% YoY, Datadog's tracer from +55% to +205%). That pattern
+  points to CI, bot and AI-coding-agent installs rather than adoption. So each registry has a **control basket**
+  of mature, ubiquitous packages (npm: react, lodash, express, typescript, axios; PyPI: requests, numpy, urllib3,
+  setuptools), and the site also shows **YoY relative to the baseline**: (1 + YoY<sub>package</sub>) /
+  (1 + YoY<sub>basket</sub>) − 1.
+- **PyPI counting break (2026-08-25).** pypistats counts fell 35–55% for every package between 24 and 25
+  August 2026, including requests and numpy. This is recorded in `config/tracked.yaml` as a known registry break
+  and marked on PyPI charts. Raw YoY whose comparison window spans the break is left blank; baseline-relative
+  YoY stays valid because the basket breaks too.
+- **Other noise**: CI pipelines and Docker builds re-download packages; mirrors (excluded on PyPI); holiday
+  weeks; package renames (legacy names included, e.g. `@google/generative-ai`, `google-generativeai`).
 
 ## 4. Reported revenue (SEC XBRL)
 
@@ -97,6 +124,19 @@ The settings live in `config/tracked.yaml` under `analysis:` and were committed 
   cross-sectional question: *did the company whose signal grew faster than its peers also grow revenue
   faster than its peers?* That guards against one macro cycle (2021 boom, 2022–23 cost-cutting) driving
   everything. CIs use the summed per-company n_eff.
+
+### Changes made after seeing the data (post-hoc), kept separate
+
+- **npm/PyPI downloads relative to the registry baseline** (`npm_rel`, `pypi_rel`) were added after the
+  registry-wide 2026 inflation showed up in the raw data. They are reported next to, not instead of, the
+  pre-registered raw signals, are labelled *post-hoc* everywhere, and sit in their own multiple-testing family.
+  The pre-registered company + calendar-quarter fixed-effects panel already removed anything common to all six
+  companies in a quarter, including this inflation.
+- The HN customer/investor/pedigree rule (section 2, rule 5) and the npm/PyPI data-quality fixes (section 3)
+  change *measurement*, not the test design. They were motivated by inspecting raw data and match samples.
+  For full transparency: a first lead/lag run on the uncorrected data had already been computed (its summary
+  counts were seen: 0 of 55 company-level and 5 of 20 pooled pre-registered tests at p < 0.05) when these
+  fixes were made. No fix was chosen by comparing lead/lag outcomes across alternatives.
 
 ## 6. Limitations
 
