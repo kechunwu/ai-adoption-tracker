@@ -75,3 +75,11 @@ def test_bh():
     assert np.isnan(q[3])
     assert q[0] == 0.04 and abs(q[1] - 0.04 * 1) < 1e-9 or q[1] <= 0.0534
     assert (q.dropna() <= 1).all()
+
+
+def test_findings_classifier():
+    from tracker.analysis.findings import classify
+    pooled = pooled_tests(synthetic_panel(lead=1, noise=0.1, n=40, tickers=("A", "B", "C", "D")), CFG)
+    v, _ = classify(pooled, "hn")
+    assert v in ("supported", "mixed/weak")
+    assert classify(pooled, "npm")[0] == "untestable"

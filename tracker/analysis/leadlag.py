@@ -333,5 +333,7 @@ def run(panel: pd.DataFrame | None = None, cfg: dict | None = None, write=True):
         company.to_csv(PROCESSED / "leadlag_company.csv", index=False)
         pooled.to_csv(PROCESSED / "leadlag_pooled.csv", index=False)
         (PROCESSED / "leadlag_summary.json").write_text(json.dumps(summary, indent=2))
+        from tracker.analysis.findings import write as write_findings
+        write_findings(company, pooled, summary)
     log.info("lead/lag summary: %s", summary)
     return company, pooled, summary
