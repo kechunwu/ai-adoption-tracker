@@ -5,7 +5,7 @@ import streamlit as st
 from app_lib.style import footer
 
 st.set_page_config(page_title="Methodology · AI Adoption Tracker", page_icon="📈", layout="wide")
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 md = (ROOT / "docs" / "METHODOLOGY.md").read_text()
 # links to repo files don't resolve inside the app; point them at GitHub
 md = md.replace("](../", "](https://github.com/KC31415/ai-adoption-tracker/blob/main/").replace(

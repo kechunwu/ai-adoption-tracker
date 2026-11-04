@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Do developer-adoption signals lead revenue?</h1>
+<p class="lede">This site tracks how fast developers and companies adopt AI and data-infrastructure tools, using free
+public data: package downloads, <em>Ask HN: Who is hiring?</em> job posts and GitHub. It then tests whether those
+signals lead reported revenue at six public data-infrastructure companies (SNOW, DDOG, MDB, CFLT, ESTC, NET).</p>
+<p class="byline">By <a href="{{ portfolio }}">Kechun Wu</a> · Rebuilt every Monday from official APIs ·
+<a href="lead-lag.html">Read the lead/lag research note →</a></p>
+
+<div class="grid k4">
+  {% for k in kpis %}<div class="card kpi"><div class="label">{{ k.label }}</div><div class="value">{{ k.value }}</div><div class="sub">{{ k.sub }}</div></div>{% endfor %}
+</div>
+
+<h2>What moved this week</h2>
+<p class="note">Week ending {{ week }}. Each package's last complete week vs. the week before, vs. the average of the 4 weeks before, and vs. a year earlier.
+“vs baseline” divides a package's YoY growth by that of a basket of mature packages on the same registry (react, lodash, express… / requests, numpy…),
+because every package's raw download count inflated in 2026 (CI, bots and AI coding agents).</p>
+{% if summary %}<div class="callout summary" style="margin:14px 0">{{ summary | safe }}
+<p class="note" style="margin-top:8px">Written automatically by Claude Haiku from the table below. It describes the data only and is not investment advice.</p></div>{% endif %}
+{% if moved_note %}<div class="callout warn" style="margin:14px 0">{{ moved_note | safe }}</div>{% endif %}
+<div class="controls"><label for="q">Filter</label><input id="q" type="search" placeholder="e.g. anthropic, npm, SNOW" data-filter-table="moved"></div>
+<div class="tablewrap">{{ moved_table | safe }}</div>
+<p class="note">Click a column header to sort. Single-week download moves are noisy (CI pipelines, holidays, registry outages; npm returned zeros for every package on {{ n_outage }} days, which are filled in from the same weekday). Treat them as prompts to look, not signals.</p>
+
+<h2>Explore</h2>
+<div class="grid c3">
+  <a class="card" href="trends.html"><strong>Tool trends →</strong><br><span class="note">Weekly downloads, YoY growth and hiring-post share for each tool and company.</span></a>
+  <a class="card" href="ai-sdk.html"><strong>AI SDK market share →</strong><br><span class="note">OpenAI vs Anthropic vs Google vs Mistral SDK downloads.</span></a>
+  <a class="card" href="lead-lag.html"><strong>Lead/lag study →</strong><br><span class="note">Do the signals lead revenue? Every lag tested, with honest uncertainty.</span></a>
+</div>
+{% endblock %}

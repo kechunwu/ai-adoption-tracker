@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Tool trends</h1>
+<p class="lede">Pick a tool or company to see its package downloads, YoY growth, and share of HN hiring posts.</p>
+<div class="controls">
+  <label for="entity">Tool / company</label>
+  <select id="entity">
+  {% for grp, items in entity_groups %}<optgroup label="{{ grp }}">{% for e in items %}<option value="{{ e.id }}">{{ e.label }}</option>{% endfor %}</optgroup>{% endfor %}
+  </select>
+</div>
+<p class="note" id="proxies"></p>
+<div class="grid c2">
+  <div class="card" id="box-downloads"><div class="chart" id="fig-downloads"></div></div>
+  <div class="card" id="box-yoy"><div class="chart" id="fig-yoy"></div>
+    <p class="note">Dashed line: the same package's growth relative to the registry baseline basket (removes the 2026 registry-wide inflation).</p></div>
+</div>
+<div class="card" id="box-hn" style="margin-top:16px"><div class="chart" id="fig-hn"></div><p class="note" id="hn-note"></p>
+  <details><summary>Audit: recent matched job-post snippets</summary><div id="hn-samples"></div></details>
+</div>
+<div class="card" id="box-stars" style="margin-top:16px"><div class="chart" id="fig-stars"></div></div>
+<div id="gh-table" style="margin-top:16px"></div>
+<p class="note">PyPI history starts where pypistats' ~180-day window began (first pull: {{ pypi_start }}) and grows weekly. GitHub stars build up from weekly snapshots; GitHub has no free star-history endpoint.</p>
+{% endblock %}

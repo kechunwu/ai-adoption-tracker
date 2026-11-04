@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="prose">
+{{ body | safe }}
+<h2 id="outages">npm outage days treated as missing</h2>
+<p>{{ outages }}</p>
+<h2 id="calibration">Null calibration table</h2>
+{{ calibration | safe }}
+</div>
+{% endblock %}

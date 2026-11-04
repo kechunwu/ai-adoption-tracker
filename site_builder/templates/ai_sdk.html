@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>AI SDK market share</h1>
+<p class="lede">Downloads of the official model-provider SDKs: <strong>OpenAI vs Anthropic vs Google Gen AI vs Mistral</strong>.
+This is a share of <em>SDK installs</em>, a proxy for developer mindshare, not for API revenue or token volume.</p>
+<div class="callout" style="margin:12px 0">Read with care: many apps call models through gateways (LangChain, Vercel AI SDK, OpenRouter, cloud
+marketplaces) or through OpenAI-compatible endpoints using the <code>openai</code> SDK, which inflates OpenAI's count. Google's figures combine the
+current <code>google-genai</code> SDK and its deprecated predecessor.</div>
+<div class="controls"><span class="note">Registry</span>
+  <div class="seg" data-group="reg"><button data-value="npm" class="on">npm (JS/TS)</button><button data-value="pypi">PyPI (Python)</button></div></div>
+{% for reg in ["npm", "pypi"] %}
+<div data-show-group="reg" data-show-value="{{ reg }}">
+  <div class="card"><div class="chart tall" data-fig="share_{{ reg }}"></div></div>
+  <div class="grid c2" style="margin-top:16px">
+    <div class="card"><div class="chart" data-fig="abs_{{ reg }}"></div></div>
+    <div class="card"><h3 style="margin-top:0">Share of combined SDK downloads (4-week average)</h3><div class="tablewrap">{{ share_tables[reg] | safe }}</div>
+      <p class="note">{{ share_notes[reg] }}</p></div>
+  </div>
+</div>
+{% endfor %}
+<h2>Mentions in HN job posts</h2>
+<div class="card"><div class="chart" data-fig="hn_vendors"></div>
+<p class="note">Share of monthly <em>Ask HN: Who is hiring?</em> posts that mention each provider (3-month average, excluding the vendor's own posts and “trusted by / customers include” lists).
+Claude, Gemini and Mistral mentions only count after each model's launch and with AI context nearby, which filters out people named Claude and the Gemini crypto exchange.</p></div>
+{% endblock %}

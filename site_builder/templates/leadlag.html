@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="prose" style="max-width:none">
+<h1>Do developer-adoption signals lead revenue?</h1>
+<p class="lede">A research note on six public data-infrastructure companies: Snowflake, Datadog, MongoDB, Confluent, Elastic and Cloudflare.</p>
+<p class="byline">Kechun Wu · Data as of {{ asof.label }} · Numbers on this page are regenerated weekly from the latest data · <a href="methodology.html">Full methodology</a></p>
+<p class="toc"><a href="#tldr">Summary</a><a href="#question">Question</a><a href="#data">Data</a><a href="#method">Method</a><a href="#findings">Findings</a><a href="#limits">Limitations</a><a href="#appendix">All results</a></p>
+
+<div class="callout" id="tldr">
+<strong>Summary.</strong>
+<ul>{% for b in tldr %}<li>{{ b | safe }}</li>{% endfor %}</ul>
+</div>
+
+<h2 id="question">1. Question</h2>
+<p style="max-width:820px">Analysts increasingly use alternative data such as package downloads and job postings to read product adoption ahead of reported numbers.
+If developers adopting a data-infrastructure product shows up first in what they install and what employers hire for, then growth in those signals
+should <em>precede</em> growth in reported revenue. This note tests that directly: <strong>does year-over-year growth in a company's developer-adoption
+signals correlate with its year-over-year revenue growth 0–4 quarters later?</strong></p>
+
+<h2 id="data">2. Data</h2>
+<div class="tablewrap">{{ data_table | safe }}</div>
+<p class="note">Revenue: SEC XBRL company facts (10-K/10-Q). Q4 is derived as full-year minus nine-month YTD. Fiscal years ending in January (SNOW, MDB) and April (ESTC)
+are handled by aggregating every signal over each company's exact fiscal-quarter dates. HN share: share of monthly <em>Who is hiring?</em> job posts
+mentioning the product, excluding the company's own job posts and customer/investor lists. npm: the company's official client package
+(<a href="https://github.com/KC31415/ai-adoption-tracker/blob/main/config/tracked.yaml">proxy rationale</a>).
+PyPI history only began ~180 days before the first pull, so PyPI cannot be tested yet.</p>
+
+<h2 id="method">3. Method</h2>
+<ul style="max-width:820px">
+<li><strong>Variables:</strong> log YoY growth (same fiscal quarter a year earlier) of revenue and of each signal.</li>
+<li><strong>Lags:</strong> corr(signal<sub>t−k</sub>, revenue<sub>t</sub>) for k = 0, 1, 2, 3, 4 quarters. <strong>All lags are reported</strong>; none is selected.</li>
+<li><strong>Uncertainty:</strong> YoY series are highly autocorrelated, so 30 quarters are worth far fewer independent observations. CIs and p-values use a
+Bartlett effective sample size (n<sub>eff</sub>). A <a href="methodology.html#calibration">null simulation run before any data was pulled</a> showed that a naive test flags
+up to 58% of unrelated persistent series as “significant”; the n<sub>eff</sub> test keeps that near 5%.</li>
+<li><strong>Multiple testing:</strong> a Bonferroni p over the five lags (paying for “picking the best lag”) and Benjamini-Hochberg q-values across all company tests.</li>
+<li><strong>Pooled panel:</strong> the six companies stacked with company fixed effects, and with company + calendar-quarter fixed effects. The second version removes
+anything common to all six in a quarter (rates, the 2021 boom and 2022–23 cost-cutting, registry-wide download inflation).</li>
+<li><strong>Pre-registration:</strong> specifications, lags and verdict rules were committed to the repo before the first data pull. Two signals were added
+<em>after</em> seeing the data and are labelled <span class="tag">post-hoc</span>: npm downloads relative to a basket of mature packages, added because every npm
+package's downloads inflated together in 2026. Post-hoc results are kept in a separate multiple-testing family.</li>
+</ul>
+
+<h2 id="findings">4. Findings</h2>
+<h3>4.1 Pooled across the six companies</h3>
+<div class="grid c2">
+{% for sig in pooled_sigs %}<div class="card"><div class="chart" data-fig="pooled_{{ sig }}"></div></div>{% endfor %}
+</div>
+<p class="note">Dots: correlation r at each lag; bars: 95% CI using the effective sample size. Blue: company fixed effects. Orange: company + calendar-quarter fixed effects.
+A real lead would show up as a positive r at k ≥ 1 that stays clear of zero in <em>both</em> versions.</p>
+<div class="tablewrap" style="margin-top:12px">{{ verdict_table | safe }}</div>
+
+<h3>4.2 Company by company</h3>
+<div class="controls"><span class="note">Signal</span>
+  <div class="seg" data-group="hm">{% for sig, label in heat_sigs %}<button data-value="{{ sig }}"{% if loop.first %} class="on"{% endif %}>{{ label }}</button>{% endfor %}</div></div>
+{% for sig, label in heat_sigs %}<div data-show-group="hm" data-show-value="{{ sig }}"><div class="card"><div class="chart" data-fig="heat_{{ sig }}"></div></div></div>{% endfor %}
+<p class="note">Cell = r between the signal's YoY growth k quarters earlier and revenue YoY growth. * marks unadjusted p &lt; 0.05. With 5 lags × several signals × 6 companies,
+some * cells are expected by chance alone ({{ summ.expected_false_positives_at_05 }} expected among {{ summ.company_tests_run }} pre-registered tests).</p>
+<div class="callout" style="margin-top:12px">{{ company_text | safe }}</div>
+
+<h3>4.3 Robustness: acceleration instead of growth</h3>
+<p style="max-width:820px">{{ robust_text | safe }}</p>
+
+<h3>4.4 Look at the raw series</h3>
+<div class="controls"><label for="rawpick">Company</label>
+<select id="rawpick" data-fig-picker="rawfig">{% for t in tickers %}<option value="raw_{{ t }}">{{ t }}</option>{% endfor %}</select></div>
+<div class="card"><div class="chart tall" id="rawfig"></div></div>
+<p class="note">Log YoY growth by fiscal quarter (0.4 ≈ +49%). Seeing the series explains most of the results above: these are short, smooth, trending series, and
+a few early hyper-growth quarters can dominate a correlation.</p>
+
+<h2 id="limits">5. What this can and can't tell you</h2>
+<div class="grid c2">
+<div class="card"><strong>Can</strong><ul>
+<li>Whether, over the available history, faster growth in a developer signal was followed by faster reported revenue growth, with honest uncertainty bands.</li>
+<li>Whether any apparent relationship survives autocorrelation, the five lags tried, and a common cycle hitting all six companies at once.</li>
+</ul></div>
+<div class="card"><strong>Can't</strong><ul>
+<li><strong>Prove causation or forecast revenue.</strong> A shared driver (rates, the 2021 boom, 2022–23 cost-cutting) can move both.</li>
+<li><strong>Detect small effects.</strong> Each company has roughly 15–35 quarterly YoY points, and an effective sample often under 10. A null result here means “not detectable with this data”, not “no relationship”.</li>
+<li><strong>Isolate paid usage.</strong> Proxies include open-source and free-tier use (community MongoDB, Apache Kafka, OpenSearch users of Elastic clients) and CI or bot downloads. HN skews toward US startups.</li>
+<li><strong>Use PyPI yet.</strong> pypistats keeps only ~180 days; PyPI YoY becomes testable after about a year of weekly appends.</li>
+</ul></div>
+</div>
+<p class="note">This is a research exercise, not investment advice.</p>
+
+<h2 id="appendix">Appendix: every test run</h2>
+<details><summary>Show all {{ n_tests }} company-level tests</summary>
+<div class="controls"><input type="search" placeholder="filter, e.g. SNOW hn yoy" data-filter-table="alltests"></div>
+<div class="tablewrap" style="max-height:520px">{{ all_table | safe }}</div></details>
+<p class="note">Downloads: <a href="data/leadlag_company.csv">leadlag_company.csv</a> · <a href="data/leadlag_pooled.csv">leadlag_pooled.csv</a> ·
+<a href="data/quarterly_panel.csv">quarterly_panel.csv</a> · <a href="data/revenue_quarterly.csv">revenue_quarterly.csv</a>.
+Columns: p = effective-n t-test; p_lag_adj = Bonferroni over lags; q_bh = Benjamini-Hochberg; p_perm = block permutation (secondary; anti-conservative on persistent series).</p>
+</div>
+{% endblock %}

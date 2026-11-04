@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} · AI Adoption Tracker</title>
+<meta name="description" content="{{ description }}">
+<meta property="og:title" content="{{ title }} · AI Adoption Tracker">
+<meta property="og:description" content="{{ description }}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232a78d6'/><path d='M7 22l6-7 5 4 7-9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="stylesheet" href="assets/style.css?v={{ build_id }}">
+<script src="assets/plotly.min.js"></script>
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="index.html">AI Adoption <span>Tracker</span></a>
+  <nav class="main">
+    {% for href, label in nav %}<a href="{{ href }}"{% if href == page %} class="active"{% endif %}>{{ label }}</a>{% endfor %}
+  </nav>
+  <span class="asof" title="{{ asof.detail }}">Data as of {{ asof.label }}</span>
+</div></header>
+<main><div class="wrap">
+{% block content %}{% endblock %}
+</div></main>
+<footer class="site"><div class="wrap">
+  Built by <a href="{{ portfolio }}">Kechun Wu</a> ·
+  <a href="{{ portfolio }}">Portfolio</a> ·
+  <a href="{{ repo }}">Source code</a> ·
+  Data as of {{ asof.label }} ({{ asof.detail }}) · Updated weekly by GitHub Actions ·
+  Free public data: npm, PyPI (pypistats), Hacker News (Algolia), GitHub, SEC EDGAR XBRL ·
+  Research project, not investment advice.
+</div></footer>
+<script>window.FIGS = {{ figs_json | safe }};</script>
+<script src="assets/app.js?v={{ build_id }}"></script>
+</body>
+</html>
