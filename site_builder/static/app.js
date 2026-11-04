@@ -1,9 +1,25 @@
 // Render Plotly figures embedded as JSON, wire up toggles and sortable tables.
 const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d", "autoScale2d"] };
 
+// Figures are built with light-mode text and grid colors; swap them for the page's own in dark mode.
+const DARK = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+function darkLayout(layout) {
+  if (!DARK) return layout;
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue("--ink").trim(), ink2 = css.getPropertyValue("--ink-2").trim();
+  const grid = css.getPropertyValue("--border").trim();
+  const l = JSON.parse(JSON.stringify(layout));
+  l.font = Object.assign({}, l.font, { color: ink2 });
+  if (l.title && l.title.font) l.title.font.color = ink;
+  Object.keys(l).filter(k => /^[xy]axis\d*$/.test(k)).forEach(k => { l[k].gridcolor = grid; l[k].linecolor = grid; l[k].zerolinecolor = grid; });
+  (l.annotations || []).forEach(a => { a.font = Object.assign({}, a.font, { color: ink2 }); });
+  if (l.hoverlabel) l.hoverlabel.bgcolor = css.getPropertyValue("--surface").trim();
+  return l;
+}
+
 function draw(el, fig) {
   if (!fig) { el.innerHTML = '<p class="note">No data for this selection yet.</p>'; return; }
-  Plotly.react(el, fig.data, fig.layout, CONFIG);
+  Plotly.react(el, fig.data, darkLayout(fig.layout), CONFIG);
 }
 
 function renderAll(root = document) {
@@ -48,10 +64,24 @@ function initTables() {
   });
   document.querySelectorAll("input[data-filter-table]").forEach(inp => {
     const t = document.getElementById(inp.dataset.filterTable);
-    inp.addEventListener("input", () => {
-      const q = inp.value.toLowerCase();
-      [...t.tBodies[0].rows].forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? "" : "none");
-    });
+    const apply = () => {
+      const q = inp.value.toLowerCase().trim();
+      const rows = [...t.tBodies[0].rows];
+      rows.forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? "" : "none");
+      // Hide a column when every visible row is blank ("–"), e.g. npm week-over-week or PyPI YoY.
+      const shown = rows.filter(r => r.style.display !== "none");
+      const n = t.tHead ? t.tHead.rows[0].cells.length : 0;
+      for (let i = 0; i < n; i++) {
+        const blank = shown.length > 0 && shown.every(r => r.cells[i] && /^[–-]?$/.test(r.cells[i].textContent.trim()));
+        [t.tHead.rows[0], ...rows].forEach(r => { if (r.cells[i]) r.cells[i].style.display = blank ? "none" : ""; });
+      }
+    };
+    inp.addEventListener("input", apply);
+    document.querySelectorAll(`button[data-filter-for="${inp.id}"]`).forEach(b => b.addEventListener("click", () => {
+      inp.value = b.dataset.value;
+      document.querySelectorAll(`button[data-filter-for="${inp.id}"]`).forEach(x => x.classList.toggle("on", x === b));
+      apply();
+    }));
   });
 }
 

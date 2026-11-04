@@ -35,7 +35,7 @@ up to 58% of unrelated persistent series as “significant”; the n<sub>eff</su
 <li><strong>Multiple testing:</strong> a Bonferroni p over the five lags (paying for “picking the best lag”) and Benjamini-Hochberg q-values across all company tests.</li>
 <li><strong>Pooled panel:</strong> the six companies stacked with company fixed effects, and with company + calendar-quarter fixed effects. The second version removes
 anything common to all six in a quarter (rates, the 2021 boom and 2022–23 cost-cutting, registry-wide download inflation).</li>
-<li><strong>Pre-registration:</strong> specifications, lags and verdict rules were committed to the repo before the first data pull. Two signals were added
+<li><strong>Pre-registration:</strong> specifications, lags and verdict rules were committed to the repo before the first data pull (commit <code>b02b808</code>, 17 minutes before the first pull in <code>cd5a0b6</code>; both on 2026-11-04, so this guards against tuning to the results, not against prior familiarity with the data). Two signals were added
 <em>after</em> seeing the data and are labelled <span class="tag">post-hoc</span>: npm downloads relative to a basket of mature packages, added because every npm
 package's downloads inflated together in 2026. Post-hoc results are kept in a separate multiple-testing family.</li>
 </ul>

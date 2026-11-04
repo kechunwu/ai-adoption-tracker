@@ -18,7 +18,8 @@ because every package's raw download count inflated in 2026 (CI, bots and AI cod
 {% if summary %}<div class="callout summary" style="margin:14px 0">{{ summary | safe }}
 <p class="note" style="margin-top:8px">Written automatically by Claude Haiku from the table below. It describes the data only and is not investment advice.</p></div>{% endif %}
 {% if moved_note %}<div class="callout warn" style="margin:14px 0">{{ moved_note | safe }}</div>{% endif %}
-<div class="controls"><label for="q">Filter</label><input id="q" type="search" placeholder="e.g. anthropic, npm, SNOW" data-filter-table="moved"></div>
+<div class="controls"><span class="seg" role="group" aria-label="Registry"><button type="button" class="on" data-filter-for="q" data-value="">All</button><button type="button" data-filter-for="q" data-value="pypi">PyPI</button><button type="button" data-filter-for="q" data-value="npm">npm</button></span>
+<label for="q">Filter</label><input id="q" type="search" placeholder="e.g. anthropic, npm, SNOW" data-filter-table="moved"></div>
 <div class="tablewrap">{{ moved_table | safe }}</div>
 <p class="note">Click a column header to sort. Single-week download moves are noisy (CI pipelines, holidays, registry outages; npm returned zeros for every package on {{ n_outage }} days, which are filled in from the same weekday). Treat them as prompts to look, not signals.</p>
 

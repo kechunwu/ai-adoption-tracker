@@ -19,11 +19,12 @@ Cloudflare (NET)**.
 
 - **HN hiring-post share → revenue: null.** Across 6 companies and lags of 0–4 quarters, pooled correlations sit
   between −0.01 and +0.11. Every 95% CI includes zero, and nothing survives the lag adjustment.
-- **npm downloads → revenue: co-movement, not a lead.** With company fixed effects, r ≈ +0.5 at *every* lag
-  **including lag 0**, flat across lags. That's the signature of a shared growth-decay trend (young products'
-  libraries and revenue both decelerate), not of a leading indicator. Three checks:
-  - With company + calendar-quarter fixed effects, r falls to +0.19 to +0.31 and no cell survives the lag
-    adjustment (best lag-adjusted p = 0.09).
+- **npm downloads → revenue: co-movement; no lead that survives correction.** With company fixed effects, r ≈ +0.5
+  at *every* lag **including lag 0**, flat across lags: the signature of a shared growth-decay trend (young products'
+  libraries and revenue both decelerate), not of a leading indicator. Once that trend is removed, the evidence is mixed:
+  - With company + calendar-quarter fixed effects, r falls to +0.19 at lag 0 but rises to +0.30–0.31 at lags 2–3
+    (p < 0.05 before correction), the shape a lead would have. No cell survives the correction for trying five lags
+    (best lag-adjusted p = 0.09), so this is a weak hint, not a finding.
   - In the "acceleration" specification (change in YoY growth on both sides), all 30 pooled cells have p > 0.1.
   - Company by company, 0 of 55 pre-registered tests reach p < 0.05, against ≈2.8 expected by chance. The npm
     correlations are high (median +0.66) but each rests on an effective sample of only ~3–11 observations.
@@ -40,9 +41,9 @@ Cloudflare (NET)**.
   the past year, while Anthropic's rose from ~20% to ~38%. In HN job posts, mentions of Anthropic/Claude reached about
   5% of all posts in 2026, ahead of OpenAI (~2.4%).
 
-**Bottom line:** in this data, developer-adoption signals *track* the long arc of these companies' growth but do not
-*lead* revenue by a detectable margin. That's a useful negative result for anyone tempted to trade on download charts,
-with the caveats of small samples and noisy proxies (see Limitations).
+**Bottom line:** in this data, developer-adoption signals *track* the long arc of these companies' growth, and no lead
+survives the pre-registered corrections. For npm downloads that is "not detectable with five companies", not "no
+lead": a modest lead-shaped pattern remains in the stricter specification (see Limitations).
 <!-- FINDINGS:END -->
 
 ## Pages
