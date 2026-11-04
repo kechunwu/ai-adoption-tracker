@@ -1,0 +1,5 @@
+{"package":"snowflake-connector-python","type":"overall_downloads",
+ "data":[{"category":"with_mirrors","date":"2024-05-01","downloads":1100},
+         {"category":"without_mirrors","date":"2024-05-01","downloads":1000},
+         {"category":"with_mirrors","date":"2024-05-02","downloads":1210},
+         {"category":"without_mirrors","date":"2024-05-02","downloads":1200}]}

@@ -1,0 +1,62 @@
+name: Weekly data pull
+
+on:
+  schedule:
+    - cron: "17 7 * * 1"   # Mondays 07:17 UTC (npm/pypistats have finalized Sunday)
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Refetch full history (npm back to 2016, all HN months)"
+        type: boolean
+        default: false
+      sources:
+        description: "Comma-separated sources"
+        default: "npm,pypi,hn,github,sec"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-pull
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Unit tests
+        run: pytest -q
+      - name: Fetch, build, analyze
+        id: pipeline
+        continue-on-error: true
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FULL=""
+          if [ "${{ github.event.inputs.full }}" = "true" ]; then FULL="--full"; fi
+          python -m tracker.pipeline --sources "${{ github.event.inputs.sources || 'npm,pypi,hn,github,sec' }}" $FULL
+      - name: Commit data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "data: weekly pull $(date -u +%Y-%m-%d)"
+            for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+          fi
+      - name: Fail if any pipeline step failed
+        if: steps.pipeline.outcome == 'failure'
+        run: |
+          cat data/run_log.json || true
+          exit 1

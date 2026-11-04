@@ -1,0 +1,269 @@
+# =============================================================================
+# ai-adoption-tracker: the single source of truth for WHAT we track and WHY.
+#
+# Every entity maps to one or more free, public "developer adoption" proxies:
+#   npm     -> api.npmjs.org daily download counts
+#   pypi    -> pypistats.org daily download counts (without mirrors)
+#   github  -> GitHub REST API repo stats (weekly snapshots)
+#   hn      -> share of "Ask HN: Who is hiring?" job posts mentioning the tool
+#
+# Public companies additionally carry a CIK so we can pull reported revenue
+# from SEC XBRL companyfacts for the lead/lag study.
+#
+# HN matching rules live here too (aliases, exclusions, context gates) so the
+# methodology is auditable in one place. See tracker/hn_match.py for how they
+# are applied and docs/METHODOLOGY.md for the reasoning.
+# =============================================================================
+
+entities:
+
+  # ---------------------------------------------------------------- AI tools --
+  - id: openai
+    name: OpenAI
+    kind: ai_tool
+    private_reference: true          # private company: signals only, no revenue
+    # Official first-party SDKs: nearly every app that calls the OpenAI API
+    # installs one of these, so downloads track developer usage of the API.
+    npm: [openai]
+    pypi: [openai]
+    github: [openai/openai-python, openai/openai-node]
+    hn:
+      aliases: ['openai', 'chat\s?gpt', 'gpt-?[345](?:\.\d)?o?', 'gpt-?4o', 'gpt-?5']
+      # "GPT" alone is too ambiguous (GUID Partition Table) -> require a version.
+      employer_aliases: ['openai']
+
+  - id: anthropic
+    name: Anthropic
+    kind: ai_tool
+    private_reference: true
+    # Official SDKs (npm package is scoped as @anthropic-ai/sdk).
+    npm: ['@anthropic-ai/sdk']
+    pypi: [anthropic]
+    github: [anthropics/anthropic-sdk-python, anthropics/anthropic-sdk-typescript]
+    hn:
+      aliases: ['anthropic', 'claude']
+      # "Claude" is also a common first name ("contact Claude at ..."). We only
+      # count "claude" if (a) the post is dated after Claude's public launch
+      # (2023-03) AND (b) an AI-context word appears within 100 characters,
+      # or it is written as a product name ("Claude Code", "Claude API", ...).
+      context_gated: ['claude']
+      not_before: '2023-03-01'
+      employer_aliases: ['anthropic']
+
+  - id: google-genai
+    name: Google Gen AI SDK
+    kind: ai_tool
+    # google-genai is the current unified Gemini SDK; @google/generative-ai is
+    # its deprecated predecessor, kept so the history is continuous.
+    npm: ['@google/genai', '@google/generative-ai']
+    pypi: [google-genai, google-generativeai]
+    github: [googleapis/python-genai, googleapis/js-genai]
+    hn:
+      aliases: ['gemini']
+      # "Gemini" is also a crypto exchange and an old protocol: date-gate to the
+      # Gemini model launch (2023-12) and require AI context nearby.
+      context_gated: ['gemini']
+      not_before: '2023-12-01'
+      exclude: ['gemini\s+(?:exchange|trust|dollar|crypto)', 'gemini\.com']
+
+  - id: mistralai
+    name: Mistral AI
+    kind: ai_tool
+    npm: ['@mistralai/mistralai']
+    pypi: [mistralai]
+    github: [mistralai/client-python]
+    hn:
+      aliases: ['mistral']
+      context_gated: ['mistral']
+      not_before: '2023-09-01'
+
+  - id: langchain
+    name: LangChain
+    kind: ai_tool
+    npm: [langchain, '@langchain/core']
+    pypi: [langchain, langchain-core]
+    github: [langchain-ai/langchain, langchain-ai/langchainjs]
+    hn:
+      aliases: ['langchain', 'lang\s?graph', 'langsmith']
+
+  - id: llama-index
+    name: LlamaIndex
+    kind: ai_tool
+    npm: [llamaindex]
+    pypi: [llama-index, llama-index-core]
+    github: [run-llama/llama_index]
+    hn:
+      aliases: ['llama[\s_-]?index', 'gpt[\s_-]?index']
+
+  - id: vercel-ai
+    name: Vercel AI SDK
+    kind: ai_tool
+    # The npm package is literally named "ai". No HN alias: "AI SDK" is too
+    # generic to attribute to Vercel in free text.
+    npm: [ai]
+    github: [vercel/ai]
+
+  - id: transformers
+    name: Hugging Face Transformers
+    kind: ai_tool
+    npm: ['@huggingface/transformers', '@xenova/transformers']
+    pypi: [transformers]
+    github: [huggingface/transformers]
+    hn:
+      aliases: ['hugging\s?face']   # "transformers" alone is ambiguous
+
+  - id: vllm
+    name: vLLM
+    kind: ai_tool
+    pypi: [vllm]
+    github: [vllm-project/vllm]
+    hn:
+      aliases: ['vllm']
+
+  - id: ollama
+    name: Ollama
+    kind: ai_tool
+    npm: [ollama]
+    pypi: [ollama]
+    github: [ollama/ollama]
+    hn:
+      aliases: ['ollama']
+
+  # -------------------------------------------- Public data-infra companies --
+  - id: SNOW
+    name: Snowflake
+    kind: public
+    ticker: SNOW
+    cik: 1640147
+    sec_name_contains: snowflake
+    fiscal_year_end: '01-31'
+    # The official Python/Node connectors are how applications and pipelines
+    # talk to a Snowflake warehouse; more installs ~ more workloads/customers.
+    pypi: [snowflake-connector-python]
+    npm: [snowflake-sdk]
+    github: [snowflakedb/snowflake-connector-python]
+    hn:
+      aliases: ['snowflake']
+      # Generic data-modeling and ID-generation uses of the word.
+      exclude: ['snowflake\s+schemas?', 'snowflake\s+ids?\b', 'special\s+snowflakes?',
+                'snowflake\s+(?:pattern|model(?:ing)?)']
+      employer_aliases: ['snowflake']
+
+  - id: DDOG
+    name: Datadog
+    kind: public
+    ticker: DDOG
+    cik: 1561550
+    sec_name_contains: datadog
+    fiscal_year_end: '12-31'
+    # ddtrace / dd-trace are the APM tracing agents installed inside customer
+    # apps (directly tied to billable APM hosts); "datadog" is the API client.
+    pypi: [ddtrace, datadog]
+    npm: [dd-trace]
+    github: [DataDog/dd-trace-py, DataDog/datadog-agent]
+    hn:
+      aliases: ['datadog']
+      employer_aliases: ['datadog']
+
+  - id: MDB
+    name: MongoDB
+    kind: public
+    ticker: MDB
+    cik: 1441816
+    sec_name_contains: mongodb
+    fiscal_year_end: '01-31'
+    # Official drivers. Caveat: drivers are used for self-hosted community
+    # MongoDB too, not only paid Atlas, so this proxies the whole ecosystem.
+    pypi: [pymongo]
+    npm: [mongodb]
+    github: [mongodb/mongo, mongodb/mongo-python-driver]
+    hn:
+      aliases: ['mongo(?:db)?']
+      employer_aliases: ['mongo(?:db)?']
+
+  - id: CFLT
+    name: Confluent
+    kind: public
+    ticker: CFLT
+    cik: 1699838
+    sec_name_contains: confluent
+    fiscal_year_end: '12-31'
+    # confluent-kafka is Confluent's own librdkafka-based client (the most
+    # common Kafka client in Python). Caveat: Kafka is Apache open source, so
+    # Kafka mentions/downloads include non-Confluent usage.
+    pypi: [confluent-kafka]
+    npm: ['@confluentinc/kafka-javascript']
+    github: [confluentinc/confluent-kafka-python, apache/kafka]
+    hn:
+      aliases: ['kafka', 'confluent']   # \bconfluent\b never matches "Confluence"
+      employer_aliases: ['confluent']
+
+  - id: ESTC
+    name: Elastic
+    kind: public
+    ticker: ESTC
+    cik: 1707753
+    sec_name_contains: elastic
+    fiscal_year_end: '04-30'
+    # Official clients. Caveat: OpenSearch (the AWS fork) users also install
+    # older elasticsearch clients, so this over-counts Elastic's own customers.
+    pypi: [elasticsearch]
+    npm: ['@elastic/elasticsearch']
+    github: [elastic/elasticsearch, elastic/elasticsearch-py]
+    hn:
+      # Bare "Elastic" is NOT an alias: it collides with AWS Elastic Beanstalk,
+      # Elastic Load Balancing, Elastic IP, "elastic scaling", etc.
+      aliases: ['elastic\s?search', 'kibana', 'logstash', 'elastic\s+stack', 'elk\s+stack', 'elastic\.co']
+      employer_aliases: ['elastic(?:search)?']
+
+  - id: NET
+    name: Cloudflare
+    kind: public
+    ticker: NET
+    cik: 1477333
+    sec_name_contains: cloudflare
+    fiscal_year_end: '12-31'
+    # wrangler is the CLI for deploying Cloudflare Workers (the developer
+    # platform); downloads track developer-platform adoption, not CDN usage.
+    npm: [wrangler]
+    github: [cloudflare/workers-sdk]
+    hn:
+      aliases: ['cloudflare']
+      employer_aliases: ['cloudflare']
+
+  # ----------------------------------------------------- Private references --
+  - id: databricks
+    name: Databricks
+    kind: private
+    private_reference: true
+    # Official SDK + SQL connector (the latter is how BI/apps query Databricks SQL).
+    pypi: [databricks-sdk, databricks-sql-connector]
+    github: [databricks/databricks-sdk-py]
+    hn:
+      aliases: ['databricks']
+      employer_aliases: ['databricks']
+
+# Words that make an ambiguous alias (context_gated) count as an AI tool
+# mention when they appear within `context_window` characters of it.
+hn_ai_context:
+  context_window: 100
+  # Deliberately NOT generic words like "model" ("we model our data") or
+  # "agent" ("insurance agents"): those produced false positives in testing.
+  words: ['ai', 'llms?', 'gpt', 'openai', 'anthropic', 'language models?', 'foundation models?',
+          'ai models?', 'prompts?', 'prompt engineering', 'ai agents?', 'agentic', 'copilot',
+          'cursor', 'gemini', 'claude', 'mistral',
+          'llama', 'genai', 'generative', 'chatbots?', 'rag', 'embeddings?',
+          'inference', 'fine-?tun\w*', 'sonnet', 'opus', 'haiku', 'machine learning', 'ml']
+  # Product-name forms that count without further context.
+  product_forms: ['claude\s+(?:code|api|sonnet|opus|haiku|\d)', 'gemini\s+(?:api|pro|flash|ultra|\d)',
+                  'mistral\s+(?:ai|large|small|medium|7b)']
+
+# Analysis settings, fixed BEFORE any data was pulled (see docs/METHODOLOGY.md).
+analysis:
+  lags_quarters: [0, 1, 2, 3, 4]
+  permutations: 5000
+  block_length: 4          # quarters, for the block-permutation null
+  min_obs: 8               # don't report a correlation with fewer overlapping quarters
+  primary_spec: yoy        # log YoY growth, both sides
+  robustness_specs: [d_yoy]  # quarter-over-quarter change in YoY ("acceleration")
+  random_seed: 20261104

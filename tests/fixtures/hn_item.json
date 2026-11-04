@@ -1,0 +1,12 @@
+{"id":39562986,"title":"Ask HN: Who is hiring? (March 2024)","children":[
+ {"id":1,"type":"comment","author":"a","created_at":"2024-03-01T16:00:00Z","parent_id":39562986,
+  "text":"Acme Analytics | Data Engineer | Remote<p>Stack: Snowflake, dbt, Kafka, Python. We use Claude and GPT-4 for internal tooling.</p>","children":[
+   {"id":11,"type":"comment","author":"b","text":"Is this role open to EU? We use MongoDB too.","children":[]}]},
+ {"id":2,"type":"comment","author":"c","created_at":"2024-03-01T16:05:00Z","parent_id":39562986,
+  "text":"Snowflake | Senior Software Engineer | San Mateo<p>Join us building the AI Data Cloud.</p>","children":[]},
+ {"id":3,"type":"comment","author":null,"text":null,"children":[]},
+ {"id":4,"type":"comment","author":"d","created_at":"2024-03-01T17:00:00Z","parent_id":39562986,
+  "text":"Widgets Inc | Backend | NYC<p>We model our warehouse as a snowflake schema in Postgres. Questions? Email Claude at jobs@widgets.example","children":[]},
+ {"id":5,"type":"comment","author":"e","created_at":"2024-03-01T18:00:00Z","parent_id":39562986,
+  "text":"Infra Co | SRE | Remote<p>Datadog, Elastic Beanstalk, Confluence wiki. Our logs go to Elasticsearch &amp; Kibana.","children":[]}
+]}
