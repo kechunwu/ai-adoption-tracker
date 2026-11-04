@@ -501,6 +501,7 @@ def page_leadlag(d: Data) -> tuple[dict, dict]:
     tldr.append(f"<strong>Company by company:</strong> {s.get('company_tests_p_lt_05', 0)} of {s.get('company_tests_run', 0)} pre-registered tests have "
                 f"p &lt; 0.05, against ≈{s.get('expected_false_positives_at_05', 0)} expected from chance alone; "
                 f"{s.get('company_tests_q_lt_10', 0)} survive a false-discovery-rate correction.")
+    tldr.append('<a href="#interpretation">What it means: the interpretation (section 4.5) →</a>')
     tldr.append("PyPI downloads cannot be tested yet (only ~180 days of history), and every result rests on 6 companies with "
                 "short, smooth series. Treat the verdicts as “what this data can detect”, not as proof either way.")
 
@@ -538,7 +539,9 @@ def page_leadlag(d: Data) -> tuple[dict, dict]:
                         td(r.p, "p") + td(r.p_lag_adj, "p") + td(r.q_bh, "p") + td(r.p_perm, "p") + "</tr>")
     all_table = table(["Ticker", "Signal", "Spec", "Lag", "n", "n_eff", "r", "CI low", "CI high", "p", "p (lag-adj)", "q (BH)", "p (perm)"],
                       rows, tid="alltests", left_cols=3)
-    ctx = {"pooled_sigs": [x for x in sigs_avail if x not in ("pypi_rel",)], "heat_sigs": heat_sigs, "tickers": tickers,
+    ip = ROOT / "docs" / "lead_lag_interpretation.md"
+    interpretation = markdown.markdown(ip.read_text()) if ip.exists() else ""
+    ctx = {"interpretation": interpretation, "pooled_sigs": [x for x in sigs_avail if x not in ("pypi_rel",)], "heat_sigs": heat_sigs, "tickers": tickers,
            "data_table": data_table, "verdict_table": verdict_table, "tldr": tldr, "company_text": company_text,
            "robust_text": robust_text, "all_table": all_table, "n_tests": len(c), "summ": s}
     return ctx, figs

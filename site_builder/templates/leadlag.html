@@ -4,7 +4,7 @@
 <h1>Do developer-adoption signals lead revenue?</h1>
 <p class="lede">A research note on six public data-infrastructure companies: Snowflake, Datadog, MongoDB, Confluent, Elastic and Cloudflare.</p>
 <p class="byline">Kechun Wu · Data as of {{ asof.label }} · Numbers on this page are regenerated weekly from the latest data · <a href="methodology.html">Full methodology</a></p>
-<p class="toc"><a href="#tldr">Summary</a><a href="#question">Question</a><a href="#data">Data</a><a href="#method">Method</a><a href="#findings">Findings</a><a href="#limits">Limitations</a><a href="#appendix">All results</a></p>
+<p class="toc"><a href="#tldr">Summary</a><a href="#question">Question</a><a href="#data">Data</a><a href="#method">Method</a><a href="#findings">Findings</a><a href="#interpretation">Interpretation</a><a href="#limits">Limitations</a><a href="#appendix">All results</a></p>
 
 <div class="callout" id="tldr">
 <strong>Summary.</strong>
@@ -66,6 +66,9 @@ some * cells are expected by chance alone ({{ summ.expected_false_positives_at_0
 <div class="card"><div class="chart tall" id="rawfig"></div></div>
 <p class="note">Log YoY growth by fiscal quarter (0.4 ≈ +49%). Seeing the series explains most of the results above: these are short, smooth, trending series, and
 a few early hyper-growth quarters can dominate a correlation.</p>
+
+<h3 id="interpretation">4.5 Interpretation</h3>
+<div class="callout" style="max-width:900px">{{ interpretation | safe }}</div>
 
 <h2 id="limits">5. What this can and can't tell you</h2>
 <div class="grid c2">

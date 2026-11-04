@@ -53,7 +53,9 @@ app. If the matching rules change, a rules hash changes and all months are re-pr
 ## 3. Downloads
 
 Daily counts → weekly totals (weeks ending Sunday) → 4-week average (rolling 28 days) → YoY = 4-week average
-vs the same 4 weeks 52 weeks earlier.
+vs the same 4 weeks 52 weeks earlier. On the charts and tables, YoY is shown only when the year-earlier base is
+at least 10,000 downloads a week; growth from a near-zero first-year base (e.g. +100,000%) is not meaningful.
+(The lead/lag study keeps its pre-registered quarterly definition; see section 5.)
 
 Data problems found in the first pull, and how they are handled:
 

@@ -22,7 +22,8 @@ log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------- downloads --
 REF_MIN_DAILY = 1000   # "established" package: median >= 1,000/day over the prior 28 days
-MAX_IMPUTED_DAYS = 2   # a week with more filled-in days than this is left blank
+MAX_IMPUTED_DAYS = 2
+MIN_YOY_BASE = 10_000  # weekly downloads a year earlier; YoY from a tinier base is not meaningful (display only)   # a week with more filled-in days than this is left blank
 
 
 def mark_missing(df: pd.DataFrame) -> pd.DataFrame:
@@ -134,7 +135,7 @@ def weekly_downloads(daily: pd.DataFrame) -> pd.DataFrame:
     w = w.merge(roll, on=["registry", "package", "week"], how="left")
     w = w.sort_values(["registry", "package", "week"])
     lag = w.groupby(["registry", "package"])["ma4"].shift(52)
-    w["yoy"] = np.where(lag > 0, w["ma4"] / lag - 1, np.nan)
+    w["yoy"] = np.where(lag >= MIN_YOY_BASE, w["ma4"] / lag - 1, np.nan)
     w.loc[spans_break(w["registry"], w["week"] - pd.Timedelta(weeks=52) - pd.Timedelta(days=27), w["week"]), "yoy"] = np.nan
     return w.reset_index(drop=True)
 
@@ -166,11 +167,11 @@ def entity_weekly(weekly: pd.DataFrame) -> pd.DataFrame:
     g.loc[g["n_ma"] < g["expected"], "ma4"] = np.nan
     g = g.drop(columns=["expected", "n_dl", "n_ma"]).sort_values(["entity", "registry", "week"])
     lag = g.groupby(["entity", "registry"])["ma4"].shift(52)
-    g["yoy"] = np.where(lag > 0, g["ma4"] / lag - 1, np.nan)
+    g["yoy"] = np.where(lag >= MIN_YOY_BASE, g["ma4"] / lag - 1, np.nan)
     # yoy_raw is kept so the baseline-relative ratio survives registry breaks
     brk = spans_break(g["registry"], g["week"] - pd.Timedelta(weeks=52) - pd.Timedelta(days=27), g["week"])
     lag_raw = g.groupby(["entity", "registry"])["ma4"].shift(52)
-    g["yoy_raw"] = np.where(lag_raw > 0, g["ma4"] / lag_raw - 1, np.nan)
+    g["yoy_raw"] = np.where(lag_raw >= MIN_YOY_BASE, g["ma4"] / lag_raw - 1, np.nan)
     g.loc[brk, "yoy"] = np.nan
     return add_baseline(g.reset_index(drop=True))
 

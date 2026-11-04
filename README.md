@@ -14,7 +14,35 @@ Cloudflare (NET)**.
 <!-- FINDINGS:START -->
 ## Headline findings
 
-_Filled in from the first full data pull; the live site regenerates these numbers weekly._
+*As of data through the week ending 2026-11-01 (SEC filings through 2026-09). The
+[live research note](https://kc31415.github.io/ai-adoption-tracker/lead-lag.html) regenerates every number weekly.*
+
+- **HN hiring-post share → revenue: null.** Across 6 companies and lags of 0–4 quarters, pooled correlations sit
+  between −0.01 and +0.11. Every 95% CI includes zero, and nothing survives the lag adjustment.
+- **npm downloads → revenue: co-movement, not a lead.** With company fixed effects, r ≈ +0.5 at *every* lag
+  **including lag 0**, flat across lags. That's the signature of a shared growth-decay trend (young products'
+  libraries and revenue both decelerate), not of a leading indicator. Three checks:
+  - With company + calendar-quarter fixed effects, r falls to +0.19 to +0.31 and no cell survives the lag
+    adjustment (best lag-adjusted p = 0.09).
+  - In the "acceleration" specification (change in YoY growth on both sides), all 30 pooled cells have p > 0.1.
+  - Company by company, 0 of 55 pre-registered tests reach p < 0.05, against ≈2.8 expected by chance. The npm
+    correlations are high (median +0.66) but each rests on an effective sample of only ~3–11 observations.
+- **Data-quality findings along the way:**
+  - npm's API reported zeros for every package on 14 days.
+  - npm download growth inflated registry-wide in 2026; MongoDB's driver went from +34% to +129% YoY with no
+    business reason.
+  - pypistats counts fell 35–55% for every package on 2026-08-25.
+  - About 3.7% of naive HN matches were customer or investor lists ("trusted by teams at Anthropic") rather
+    than usage.
+
+  All are detected, documented, and handled in the pipeline.
+- **AI SDK share (npm, 4-week average):** OpenAI's SDK fell from ~55% to ~35% of combined official-SDK downloads over
+  the past year, while Anthropic's rose from ~20% to ~38%. In HN job posts, mentions of Anthropic/Claude reached about
+  5% of all posts in 2026, ahead of OpenAI (~2.4%).
+
+**Bottom line:** in this data, developer-adoption signals *track* the long arc of these companies' growth but do not
+*lead* revenue by a detectable margin. That's a useful negative result for anyone tempted to trade on download charts,
+with the caveats of small samples and noisy proxies (see Limitations).
 <!-- FINDINGS:END -->
 
 ## Pages
