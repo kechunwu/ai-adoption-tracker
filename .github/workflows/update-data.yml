@@ -26,6 +26,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}   # branch HEAD at start (includes earlier runs' data)
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -53,7 +55,13 @@ jobs:
             echo "No data changes"
           else
             git commit -m "data: weekly pull $(date -u +%Y-%m-%d)"
-            for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+            for i in 1 2 3; do
+              git fetch origin "${GITHUB_REF_NAME}"
+              # on a data conflict keep this run's (newer) files
+              git rebase -X theirs "origin/${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+              git rebase --abort 2>/dev/null || true
+              sleep 5
+            done
           fi
       - name: Fail if any pipeline step failed
         if: steps.pipeline.outcome == 'failure'
