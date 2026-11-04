@@ -1,13 +1,9 @@
 {
-  "started": "2026-11-04T19:56:43Z",
+  "started": "2026-11-04T20:02:18Z",
   "steps": {
-    "npm": {
+    "hn": {
       "ok": true,
-      "rows": 91080
-    },
-    "pypi": {
-      "ok": true,
-      "rows": 5040
+      "rows": 2096
     },
     "build": {
       "ok": true,
@@ -22,5 +18,5 @@
       "rows": 1
     }
   },
-  "finished": "2026-11-04T20:01:36Z"
+  "finished": "2026-11-04T20:07:12Z"
 }
