@@ -29,10 +29,18 @@ SYSTEM = (
 )
 
 
-def movers_markdown(moved: pd.DataFrame, top: int = 12) -> str:
-    cols = ["name", "registry", "package", "downloads", "wow", "vs_prior4", "yoy_4wk"]
-    t = moved[cols].head(top).copy()
-    for c in ("wow", "vs_prior4", "yoy_4wk"):
+def movers_markdown(moved: pd.DataFrame, top: int = 8) -> str:
+    """Biggest short-term movers plus the npm rows ranked by YoY vs the registry baseline
+    (npm week-over-week can be blank after registry outages)."""
+    cols = ["name", "registry", "package", "downloads", "wow", "vs_prior4", "yoy_4wk", "yoy_vs_baseline"]
+    cols = [c for c in cols if c in moved]
+    short = moved.dropna(subset=["vs_prior4"]).head(top)
+    rest = moved.drop(short.index)
+    if "yoy_vs_baseline" in rest:
+        rest = rest.dropna(subset=["yoy_vs_baseline"]).sort_values("yoy_vs_baseline", ascending=False)
+        rest = pd.concat([rest.head(4), rest.tail(2)]).drop_duplicates()
+    t = pd.concat([short, rest])[cols].copy()
+    for c in [c for c in ("wow", "vs_prior4", "yoy_4wk", "yoy_vs_baseline") if c in t]:
         t[c] = t[c].map(lambda v: "" if pd.isna(v) else f"{v:+.1%}")
     t["downloads"] = t["downloads"].map(lambda v: f"{int(v):,}")
     header = "| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
@@ -56,7 +64,10 @@ def generate(moved: pd.DataFrame) -> str | None:
             system=SYSTEM,
             messages=[{"role": "user", "content":
                        f"Week ending {week}. Columns: wow = vs prior week, vs_prior4 = vs average of "
-                       f"prior 4 weeks, yoy_4wk = 4-week average vs same period last year.\n\n"
+                       f"prior 4 weeks, yoy_4wk = 4-week average vs same period last year, yoy_vs_baseline = "
+                       f"YoY relative to a basket of mature packages on the same registry (removes registry-wide "
+                       f"inflation). Blank wow/vs_prior4 for npm means the prior weeks had npm registry outage days. "
+                       f"Raw npm YoY is inflated registry-wide in 2026, so prefer yoy_vs_baseline for npm.\n\n"
                        f"{movers_markdown(moved)}"}],
         )
     except anthropic.APIError as exc:
