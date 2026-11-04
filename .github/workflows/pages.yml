@@ -2,7 +2,7 @@ name: Build & deploy site
 
 on:
   push:
-    branches: [main, "claude/**"]
+    branches: [main]   # Pages has one site: a branch push would overwrite production
   workflow_dispatch:
   workflow_call:
 
