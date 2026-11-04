@@ -255,6 +255,15 @@ entities:
     npm: [react, lodash, express, typescript, axios]
     pypi: [requests, numpy, urllib3, setuptools]
 
+# Registry-wide level breaks: counting changes on the registry side that move
+# EVERY package at once (detected in the data, not adoption). Raw YoY that spans
+# a break is blanked; baseline-relative YoY stays valid because the control
+# basket breaks too.
+known_breaks:
+  - registry: pypi
+    date: '2026-08-25'
+    note: 'pypistats counts fell 35-55% for every package (incl. requests, numpy) between 2026-08-24 and 2026-08-25'
+
 # Words that make an ambiguous alias (context_gated) count as an AI tool
 # mention when they appear within `context_window` characters of it.
 hn_ai_context:

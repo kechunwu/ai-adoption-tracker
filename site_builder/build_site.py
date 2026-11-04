@@ -23,7 +23,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from tracker.analysis.findings import classify
 from tracker.build import mark_missing, outage_days
-from tracker.config import DATA, PROCESSED, RAW, ROOT, entities
+from tracker.config import DATA, PROCESSED, RAW, ROOT, entities, known_breaks
 
 OUT = ROOT / "_site"
 HERE = Path(__file__).resolve().parent
@@ -59,15 +59,25 @@ def csv(path: Path, dates=()) -> pd.DataFrame:
 def layout(fig: go.Figure, title=None, yfmt=None, height=360, legend=True) -> go.Figure:
     fig.update_layout(
         title=dict(text=title, x=0, xanchor="left", font=dict(size=14, color=INK)) if title else None,
-        height=height, margin=dict(l=8, r=8, t=56 if title else 20, b=8),
+        height=height, margin=dict(l=8, r=8, t=44 if title else 16, b=8),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(family="-apple-system, Segoe UI, Inter, Roboto, Arial, sans-serif", color=INK2, size=12),
         hovermode="x unified", showlegend=legend,
-        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1, title=None, font=dict(size=11)),
+        legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="left", x=0, title=None, font=dict(size=11)),
         hoverlabel=dict(bgcolor="white", font_size=12),
     )
     fig.update_xaxes(showgrid=False, linecolor=GRID, ticks="outside", tickcolor=GRID)
     fig.update_yaxes(gridcolor=GRID, zeroline=False, tickformat=yfmt)
+    return fig
+
+
+def mark_breaks(fig: go.Figure, registries) -> go.Figure:
+    """Dashed vertical line at known registry-wide counting breaks."""
+    for b in known_breaks():
+        if b["registry"] in registries:
+            fig.add_vline(x=pd.Timestamp(b["date"]).timestamp() * 1000, line=dict(color=NEUTRAL, width=1, dash="dash"))
+            fig.add_annotation(x=pd.Timestamp(b["date"]), y=1, yref="paper", text=f"{b['registry']} counting change",
+                               showarrow=False, xanchor="right", yanchor="top", font=dict(size=10, color=NEUTRAL))
     return fig
 
 
@@ -100,6 +110,8 @@ def td(v, kind="pct", digits=1, cls_sign=True):
     if kind == "pct":
         txt = pct(v, digits)
         cls = (" pos" if v > 0 else " neg" if v < 0 else "") if cls_sign else ""
+    elif kind == "share":
+        txt, cls = pct(v, digits, signed=False), ""
     elif kind == "num":
         txt, cls = num(v), ""
     elif kind == "r":
@@ -185,9 +197,9 @@ def page_index(d: Data) -> dict:
         rows.append("<tr>" + tdl(html.escape(names.get(r.entity, r.entity))) + tdl(r.registry) + tdl(f"<code>{html.escape(r.package)}</code>")
                     + td(r.downloads, "num") + td(r.wow) + td(r.vs_prior4) + td(r.yoy_4wk, digits=0)
                     + td(getattr(r, "yoy_vs_baseline", np.nan), digits=0)
-                    + td(getattr(r, "hn_share", np.nan), "pct", 2, cls_sign=False) + "</tr>")
-    moved_table = table(["Tool", "Registry", "Package", "Downloads (last wk)", "vs prior wk", "vs prior 4 wks",
-                         "YoY (4-wk avg)", "YoY vs baseline", "HN share (latest mo.)"], rows, tid="moved", left_cols=3)
+                    + td(getattr(r, "hn_share", np.nan), "share", 2) + "</tr>")
+    moved_table = table(["Tool", "Reg.", "Package", "Last wk", "WoW", "vs 4 wks", "YoY", "YoY vs base", "HN share"],
+                        rows, tid="moved", left_cols=3)
     note = None
     if not m.empty:
         npm_blank = m[(m["registry"] == "npm") & m["wow"].isna()]
@@ -223,6 +235,7 @@ def trends_bundles(d: Data, out: Path) -> list:
                               line=dict(width=1, color=REG_COLOR[reg]), opacity=0.35, hovertemplate="%{y:,.0f}")
                 f.add_scatter(x=g["week"], y=g["ma4"].round(0), name=f"{reg} 4-wk avg", mode="lines",
                               line=dict(width=2, color=REG_COLOR[reg]), hovertemplate="%{y:,.0f}")
+            mark_breaks(f, set(sub["registry"]))
             figs["downloads"] = fig_json(layout(f, "Weekly downloads (thin: week, bold: 4-week average)", "~s"))
             f = go.Figure()
             for reg, g in sub.groupby("registry"):
@@ -236,12 +249,17 @@ def trends_bundles(d: Data, out: Path) -> list:
                                   line=dict(width=2, color=REG_COLOR[reg], dash="dot"), hovertemplate="%{y:+.0%}")
             if f.data:
                 f.add_hline(y=0, line=dict(color=NEUTRAL, width=1))
-                lay = layout(f, "YoY growth of 4-week average downloads", "+.0%")
-                vals = np.concatenate([np.asarray(t.y, dtype=float) for t in f.data if t.y is not None])
+                lay = layout(f, "YoY growth of 4-week average downloads (last 3 years; zoom out for all)", "+.0%")
+                end = sub["week"].max()
+                start = end - pd.DateOffset(years=3)
+                recent = sub[sub["week"] >= start]
+                vals = pd.concat([recent["yoy"], recent.get("yoy_rel", pd.Series(dtype=float))]).to_numpy(dtype=float)
                 vals = vals[np.isfinite(vals)]
-                if len(vals):  # early hyper-growth makes linear scale unreadable: cap the view, keep data
-                    hi = min(np.nanpercentile(vals, 98), 20)
-                    lay.update_yaxes(range=[max(-1, np.nanmin(vals)) - 0.05, hi * 1.08 + 0.05])
+                if len(vals):  # early hyper-growth makes a linear axis unreadable: frame the recent years
+                    lo, hi = max(-1.0, np.nanmin(vals)), np.nanmax(vals)
+                    pad = (hi - lo) * 0.08 + 0.02
+                    lay.update_xaxes(range=[start, end + pd.Timedelta(days=7)])
+                    lay.update_yaxes(range=[lo - pad, hi + pad])
                 figs["yoy"] = fig_json(lay)
         h = d.hn[d.hn["entity"] == e.id] if not d.hn.empty else d.hn
         hn_note, samples = "", ""
@@ -308,6 +326,7 @@ def page_ai_sdk(d: Data) -> tuple[dict, dict]:
         for e in [v for v in VENDORS if v in wide]:
             f.add_scatter(x=wide.index, y=wide[e].round(0), name=VENDORS[e], mode="lines",
                           line=dict(width=2, color=VENDOR_COLOR[e]), hovertemplate="%{y:,.0f}")
+        mark_breaks(f, {reg})
         lay = layout(f, "Weekly downloads, 4-week average", "~s")
         lay.update_yaxes(type="log")
         lay.update_layout(updatemenus=[dict(type="buttons", direction="right", x=0, y=1.0, xanchor="left", yanchor="bottom",
@@ -321,7 +340,7 @@ def page_ai_sdk(d: Data) -> tuple[dict, dict]:
         rows = []
         for e in [v for v in VENDORS if v in share]:
             prev = ago[e].iloc[-1] if not ago.empty else np.nan
-            rows.append("<tr>" + tdl(VENDORS[e]) + td(latest[e], "pct", 1, False) + td(prev, "pct", 1, False)
+            rows.append("<tr>" + tdl(VENDORS[e]) + td(latest[e], "share") + td(prev, "share")
                         + (f'<td data-sort="{(latest[e] - prev) * 100}">{(latest[e] - prev) * 100:+.1f} pp</td>' if pd.notna(prev) else '<td>–</td>')
                         + "</tr>")
         tables[reg] = table(["SDK", "Now", "1 year earlier", "Change"], rows, left_cols=1)
@@ -359,7 +378,7 @@ def _pooled_fig(p: pd.DataFrame, sig: str) -> go.Figure:
     lay = layout(f, f"{SIG[sig]}{tag} → revenue", ".1f", 340)
     lay.update_xaxes(title="lag k (quarters the signal leads)", tickvals=[0, 1, 2, 3, 4], range=[-0.5, 4.5])
     lay.update_yaxes(range=[-1, 1], title="correlation r")
-    lay.update_layout(hovermode="closest")
+    lay.update_layout(hovermode="closest", legend=dict(y=-0.3), height=370, margin=dict(b=20))
     return lay
 
 
@@ -400,8 +419,13 @@ def _raw_fig(panel: pd.DataFrame, t: str) -> go.Figure:
     lay = layout(f, f"{PUBLIC_NAMES.get(t, t)} ({t}): log YoY growth by fiscal quarter", ".1f", 420)
     vals = np.concatenate([np.asarray(tr.y, dtype=float) for tr in f.data])
     vals = vals[np.isfinite(vals)]
-    if len(vals):
-        lay.update_yaxes(range=[max(np.nanmin(vals), -2) - 0.1, min(np.nanmax(vals), 3) + 0.1])
+    if len(vals):  # first-year package growth can be log 5+; frame the range where revenue lives
+        lo, hi = max(np.nanmin(vals), -1.0), min(np.nanmax(vals), 2.5)
+        lay.update_yaxes(range=[lo - 0.1, hi + 0.1])
+        if np.nanmax(vals) > 2.5:
+            lay.add_annotation(text="some early signal values above 2.5 are off-scale (zoom out to see)", xref="paper",
+                               yref="paper", x=0, y=1.0, xanchor="left", yanchor="bottom", showarrow=False,
+                               font=dict(size=11, color=NEUTRAL))
     return lay
 
 
