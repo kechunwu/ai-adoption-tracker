@@ -9,6 +9,6 @@
   "company_tests_q_lt_10": 0,
   "pooled_tests_run": 20,
   "pooled_tests_p_lt_05": 8,
-  "pooled_min_p_lag_adj": 0.0229095639611668,
+  "pooled_min_p_lag_adj": 0.0214685856033717,
   "untestable_cells": 70
 }
