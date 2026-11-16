@@ -1,13 +1,13 @@
 {
-  "started": "2026-11-09T17:28:34Z",
+  "started": "2026-11-16T16:59:28Z",
   "steps": {
     "npm": {
       "ok": true,
-      "rows": 91195
+      "rows": 91356
     },
     "pypi": {
       "ok": true,
-      "rows": 5160
+      "rows": 5328
     },
     "hn": {
       "ok": true,
@@ -15,7 +15,7 @@
     },
     "github": {
       "ok": true,
-      "rows": 50
+      "rows": 75
     },
     "sec": {
       "ok": true,
@@ -34,5 +34,5 @@
       "rows": 1
     }
   },
-  "finished": "2026-11-09T17:32:11Z"
+  "finished": "2026-11-16T17:02:42Z"
 }
